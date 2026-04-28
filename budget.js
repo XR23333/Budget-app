@@ -148,33 +148,13 @@ function updateUI() {
 }
 
 function showEntry(list, type, title, amount, id) {
-  // 1. Create the outer <li> element
-  const li = document.createElement("li");
-  li.id = id;
-  li.className = type;
-
-  // 2. Create the <div> to wrap the title and amount
-  const entryDiv = document.createElement("div");
-  entryDiv.className = "entry";
-  
-  // Core defense: Using textContent ensures the browser renders the title as plain text, preventing script execution
-  entryDiv.textContent = `${title} : $${amount}`; 
-
-  // 3. Create the <div> for the edit button
-  const editDiv = document.createElement("div");
-  editDiv.id = "edit";
-
-  // 4. Create the <div> for the delete button
-  const deleteDiv = document.createElement("div");
-  deleteDiv.id = "delete";
-
-  // 5. Assemble all inner <div> elements into the <li>
-  li.appendChild(entryDiv);
-  li.appendChild(editDiv);
-  li.appendChild(deleteDiv);
-
-  // 6. Insert the entire <li> at the beginning of the list (perfectly replaces the original afterbegin logic)
-  list.insertBefore(li, list.firstChild);
+  const entry = `<li id="${id}" class="${type}">
+                    <div class="entry">${title} : $${amount}</div>
+                    <div id="edit"></div>
+                    <div id="delete"></div>
+                  </li>`;
+  const position = "afterbegin";
+  list.insertAdjacentHTML(position, entry);
 }
 
 function clearElement(elements) {
