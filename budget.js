@@ -220,3 +220,8 @@ function inactive(elements) {
     element.classList.remove("focus");
   });
 }
+
+// Export logic specifically for Jest unit testing (does not affect browser execution)
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { calculateTotal, calculateBalance };
+}
