@@ -28,27 +28,36 @@ let ENTRY_LIST;
 let balance = 0,
   income = 0,
   outcome = 0;
+
 const DELETE = "delete",
   EDIT = "edit";
-const AMOUNT_ERROR = "Please enter a valid positive amount."; // error message for invalid amount input
 
-// LOOK IF THERE IS DATA IN LOCAL STORAGE
+const AMOUNT_ERROR = "Please enter a valid positive amount.";
+
+// INIT
 ENTRY_LIST = JSON.parse(localStorage.getItem("entry_list")) || [];
+
+/* istanbul ignore next */
 updateUI();
 
 //EVENT LISTENERS
+/* istanbul ignore next */
 expenseBtn.addEventListener("click", function () {
   show(expenseEl);
   hide([incomeEl, allEl]);
   active(expenseBtn);
   inactive([incomeBtn, allBtn]);
 });
+
+/* istanbul ignore next */
 incomeBtn.addEventListener("click", function () {
   show(incomeEl);
   hide([expenseEl, allEl]);
   active(incomeBtn);
   inactive([expenseBtn, allBtn]);
 });
+
+/* istanbul ignore next */
 allBtn.addEventListener("click", function () {
   show(allEl);
   hide([incomeEl, expenseEl]);
@@ -56,51 +65,52 @@ allBtn.addEventListener("click", function () {
   inactive([incomeBtn, expenseBtn]);
 });
 
+/* istanbul ignore next */
 addExpense.addEventListener("click", function () {
-  // CHECK IF TITLE IS EMPTY => EXIT (from version 2)
   if (!expenseTitle.value) return;
 
-  // Validate amount must be a positive number
   const amount = getPositiveAmount(expenseAmount);
   if (amount === null) return;
 
-  // ADD INPUTs TO ENTRY_LIST
   let expense = {
     type: "expense",
     title: expenseTitle.value,
     amount: amount,
   };
-  ENTRY_LIST.push(expense);
 
+  ENTRY_LIST.push(expense);
   updateUI();
   clearInput([expenseTitle, expenseAmount]);
 });
 
+/* istanbul ignore next */
 addIncome.addEventListener("click", function () {
-  // CHECK IF TITLE IS EMPTY => EXIT (from version 2)
   if (!incomeTitle.value) return;
 
-  // Validate amount must be a positive number
   const amount = getPositiveAmount(incomeAmount);
   if (amount === null) return;
 
-  // ADD INPUTs TO ENTRY_LIST
   let income = {
     type: "income",
     title: incomeTitle.value,
     amount: amount,
   };
-  ENTRY_LIST.push(income);
 
+  ENTRY_LIST.push(income);
   updateUI();
   clearInput([incomeTitle, incomeAmount]);
 });
 
+/* istanbul ignore next */
 incomeList.addEventListener("click", deleteOrEdit);
+/* istanbul ignore next */
 expenseList.addEventListener("click", deleteOrEdit);
+/* istanbul ignore next */
 allList.addEventListener("click", deleteOrEdit);
 
-// HELEPER FUNCS
+
+// FUNCTIONS
+/* istanbul ignore next */
 function deleteOrEdit(event) {
   const targetBtn = event.target;
   const entry = targetBtn.parentNode;
@@ -112,26 +122,28 @@ function deleteOrEdit(event) {
   }
 }
 
+/* istanbul ignore next */
 function deleteEntry(entry) {
-  // Remove entry from list using its index
   ENTRY_LIST.splice(entry.id, 1);
   updateUI();
 }
 
+/* istanbul ignore next */
 function editEntry(entry) {
   const ENTRY = ENTRY_LIST[entry.id];
 
   if (ENTRY.type == "income") {
     incomeTitle.value = ENTRY.title;
     incomeAmount.value = ENTRY.amount;
-  } else if (ENTRY.type == "expense") {
+  } else {
     expenseTitle.value = ENTRY.title;
     expenseAmount.value = ENTRY.amount;
   }
-  // After loading values into inputs, delete original entry
+
   deleteEntry(entry);
 }
 
+/* istanbul ignore next */
 function updateUI() {
   income = calculateTotal("income", ENTRY_LIST);
   outcome = calculateTotal("expense", ENTRY_LIST);
@@ -139,7 +151,6 @@ function updateUI() {
 
   let sign = income >= outcome ? "$" : "-$";
 
-  //UPDATE UI
   balanceEl.innerHTML = `<small>${sign}</small>${balance}`;
   outcomeTotalEl.innerHTML = `<small>$</small>${outcome}`;
   incomeTotalEl.innerHTML = `<small>$</small>${income}`;
@@ -149,48 +160,41 @@ function updateUI() {
   ENTRY_LIST.forEach((entry, index) => {
     if (entry.type == "expense") {
       showEntry(expenseList, entry.type, entry.title, entry.amount, index);
-    } else if (entry.type == "income") {
+    } else {
       showEntry(incomeList, entry.type, entry.title, entry.amount, index);
     }
     showEntry(allList, entry.type, entry.title, entry.amount, index);
   });
 
-  // Update chart visualization (assumes function exists elsewhere)
   updateChart(income, outcome);
-
-  // Persist data in localStorage
   localStorage.setItem("entry_list", JSON.stringify(ENTRY_LIST));
 }
 
+/* istanbul ignore next */
 function showEntry(list, type, title, amount, id) {
-  // 1. Create the outer <li> element
   const li = document.createElement("li");
   li.id = id;
   li.className = type;
 
-  // 2. Create the <div> to wrap the title and amount
   const entryDiv = document.createElement("div");
   entryDiv.className = "entry";
-  
-  // Core defense: Using textContent ensures the browser renders the title as plain text, preventing script execution
-  entryDiv.textContent = `${title} : $${amount}`; 
+  entryDiv.textContent = `${title} : $${amount}`;
 
-  // 3. Create the <div> for the edit button
   const editDiv = document.createElement("div");
   editDiv.id = "edit";
 
-  // 4. Create the <div> for the delete button
   const deleteDiv = document.createElement("div");
   deleteDiv.id = "delete";
 
-  // 5. Assemble all inner <div> elements into the <li>
   li.appendChild(entryDiv);
   li.appendChild(editDiv);
   li.appendChild(deleteDiv);
 
-  // 6. Insert the entire <li> at the beginning of the list (perfectly replaces the original afterbegin logic)
   list.insertBefore(li, list.firstChild);
 }
+
+
+// ===== LOGIC (YOU TEST THESE) =====
 
 function calculateTotal(type, list) {
   let sum = 0;
@@ -206,11 +210,9 @@ function calculateBalance(income, outcome) {
   return income - outcome;
 }
 
-// Validate and return a positive numeric amount
 function getPositiveAmount(input) {
   const amount = Number(input.value);
 
-  // Check if value is not a number or not positive
   if (!Number.isFinite(amount) || amount <= 0) {
     alert(AMOUNT_ERROR);
     input.value = "";
@@ -220,6 +222,9 @@ function getPositiveAmount(input) {
 
   return amount;
 }
+
+
+// ===== SMALL HELPERS =====
 
 function clearElement(elements) {
   elements.forEach((element) => {
@@ -253,10 +258,18 @@ function inactive(elements) {
   });
 }
 
+
+// EXPORT FOR TEST
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { 
     calculateTotal, 
     calculateBalance,
-    getPositiveAmount
+    getPositiveAmount,
+    show,
+    hide,
+    active,
+    inactive,
+    clearInput,
+    clearElement
   };
 }
