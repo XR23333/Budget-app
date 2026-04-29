@@ -252,7 +252,6 @@ function inactive(elements) {
     element.classList.remove("focus");
   });
 }
-}
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { 
