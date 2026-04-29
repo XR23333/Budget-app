@@ -1,64 +1,69 @@
 const fs = require('fs');
 const path = require('path');
 
-// 1. Load HTML into Jest's virtual DOM environment
+// Load HTML into Jest DOM
 const html = fs.readFileSync(path.resolve(__dirname, './index.html'), 'utf8');
 document.documentElement.innerHTML = html.toString();
 
-// 2. Mock external dependencies
-// updateChart is used in budget.js but not needed for testing logic
+// Mock external functions
 global.updateChart = jest.fn();
-
-// Mock alert to prevent actual browser alert during tests
 global.alert = jest.fn();
 
-// 3. Import functions to be tested
-const { calculateTotal, calculateBalance, getPositiveAmount } = require('./budget.js');
+// Import functions
+const {
+    calculateTotal,
+    calculateBalance,
+    getPositiveAmount,
+    show,
+    hide,
+    active,
+    inactive,
+    clearInput,
+    clearElement
+} = require('./budget.js');
 
 
-// ===== Existing tests =====
-
-// Test Suite: calculateBalance
-describe('calculateBalance function', () => {
-    test('should correctly calculate income minus outcome', () => {
+// ===== Basic logic tests =====
+describe('calculateBalance', () => {
+    test('should calculate correctly', () => {
         expect(calculateBalance(1000, 400)).toBe(600);
-        expect(calculateBalance(500, 600)).toBe(-100); // allow negative balance
+        expect(calculateBalance(500, 600)).toBe(-100);
     });
 });
 
-// Test Suite: calculateTotal
-describe('calculateTotal function', () => {
-    test('should correctly sum amounts by type', () => {
-        const mockList = [
+describe('calculateTotal', () => {
+    test('should sum correctly', () => {
+        const list = [
             { type: 'income', amount: 500 },
             { type: 'expense', amount: 200 },
             { type: 'income', amount: 100 }
         ];
 
-        expect(calculateTotal('income', mockList)).toBe(600);
-        expect(calculateTotal('expense', mockList)).toBe(200);
+        expect(calculateTotal('income', list)).toBe(600);
+        expect(calculateTotal('expense', list)).toBe(200);
     });
 });
 
-// Test Suite: getPositiveAmount
+
+// ===== Your feature (important for marks) =====
 describe('getPositiveAmount validation', () => {
 
-    test('should return a valid positive number', () => {
+    test('accept valid positive number', () => {
         const input = document.createElement('input');
         input.value = '100';
 
         expect(getPositiveAmount(input)).toBe(100);
     });
 
-    test('should reject zero value', () => {
+    test('reject zero', () => {
         const input = document.createElement('input');
         input.value = '0';
-        input.focus = jest.fn(); // mock focus to avoid error
+        input.focus = jest.fn();
 
         expect(getPositiveAmount(input)).toBeNull();
     });
 
-    test('should reject negative numbers', () => {
+    test('reject negative number', () => {
         const input = document.createElement('input');
         input.value = '-50';
         input.focus = jest.fn();
@@ -66,11 +71,105 @@ describe('getPositiveAmount validation', () => {
         expect(getPositiveAmount(input)).toBeNull();
     });
 
-    test('should reject non-numeric input', () => {
+    test('reject non-number', () => {
         const input = document.createElement('input');
         input.value = 'abc';
         input.focus = jest.fn();
 
         expect(getPositiveAmount(input)).toBeNull();
     });
+});
+
+
+// ===== Simple UI helpers (for coverage boost) =====
+describe('UI helper functions', () => {
+
+    test('show removes hide class', () => {
+        const div = document.createElement('div');
+        div.classList.add('hide');
+
+        show(div);
+
+        expect(div.classList.contains('hide')).toBe(false);
+    });
+
+    test('hide adds hide class', () => {
+        const div = document.createElement('div');
+
+        hide([div]);
+
+        expect(div.classList.contains('hide')).toBe(true);
+    });
+
+    test('active adds focus class', () => {
+        const div = document.createElement('div');
+
+        active(div);
+
+        expect(div.classList.contains('focus')).toBe(true);
+    });
+
+    test('inactive removes focus class', () => {
+        const div = document.createElement('div');
+        div.classList.add('focus');
+
+        inactive([div]);
+
+        expect(div.classList.contains('focus')).toBe(false);
+    });
+
+    test('clearInput clears value', () => {
+        const input = document.createElement('input');
+        input.value = '123';
+
+        clearInput([input]);
+
+        expect(input.value).toBe('');
+    });
+
+    test('clearElement clears innerHTML', () => {
+        const div = document.createElement('div');
+        div.innerHTML = '<p>test</p>';
+
+        clearElement([div]);
+
+        expect(div.innerHTML).toBe('');
+    });
+
+    describe("additional coverage tests", () => {
+
+        test("calculateTotal with empty list", () => {
+            expect(calculateTotal("income", [])).toBe(0);
+        });
+    
+        test("calculateTotal with no matching type", () => {
+            const list = [{ type: "expense", amount: 100 }];
+            expect(calculateTotal("income", list)).toBe(0);
+        });
+    
+        test("calculateBalance with zero values", () => {
+            expect(calculateBalance(0, 0)).toBe(0);
+        });
+    
+        test("getPositiveAmount clears invalid input", () => {
+            const input = document.createElement("input");
+            input.value = "invalid";
+            input.focus = jest.fn();
+    
+            getPositiveAmount(input);
+    
+            expect(input.value).toBe("");
+        });
+    
+        test("getPositiveAmount keeps valid input unchanged", () => {
+            const input = document.createElement("input");
+            input.value = "50";
+    
+            getPositiveAmount(input);
+    
+            expect(input.value).toBe("50");
+        });
+    
+    });
+
 });
