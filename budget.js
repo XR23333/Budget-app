@@ -33,7 +33,37 @@ const DELETE = "delete",
 const AMOUNT_ERROR = "Please enter a valid positive amount."; // error message for invalid amount input
 
 // LOOK IF THERE IS DATA IN LOCAL STORAGE
-ENTRY_LIST = JSON.parse(localStorage.getItem("entry_list")) || [];
+function loadEntries() {
+  try {
+    const savedData = localStorage.getItem("entry_list");
+
+    if (!savedData) {
+      return [];
+    }
+
+    const parsedData = JSON.parse(savedData);
+
+    if (!Array.isArray(parsedData)) {
+      throw new Error("Invalid entry list format");
+    }
+
+    return parsedData;
+  } catch (error) {
+    console.error("Failed to load entries:", error);
+    localStorage.removeItem("entry_list");
+    alert("Saved data was corrupted and has been reset.");
+    return [];
+  }
+}
+function saveEntries() {
+  try {
+    localStorage.setItem("entry_list", JSON.stringify(ENTRY_LIST));
+  } catch (error) {
+    console.error("Failed to save entries:", error);
+    alert("Unable to save budget data.");
+  }
+}
+ENTRY_LIST = loadEntries();
 updateUI();
 
 //EVENT LISTENERS
@@ -159,7 +189,7 @@ function updateUI() {
   updateChart(income, outcome);
 
   // Persist data in localStorage
-  localStorage.setItem("entry_list", JSON.stringify(ENTRY_LIST));
+  saveEntries();
 }
 
 function showEntry(list, type, title, amount, id) {
