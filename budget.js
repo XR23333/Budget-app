@@ -1,20 +1,28 @@
-//SELECT ELEMENTS
+// =====================
+// SELECT DOM ELEMENTS
+// =====================
 const balanceEl = document.querySelector(".balance .value");
 const incomeTotalEl = document.querySelector(".income-total");
 const outcomeTotalEl = document.querySelector(".outcome-total");
+
 const incomeEl = document.querySelector("#income");
 const expenseEl = document.querySelector("#expense");
 const allEl = document.querySelector("#all");
+
 const incomeList = document.querySelector("#income .list");
 const expenseList = document.querySelector("#expense .list");
 const allList = document.querySelector("#all .list");
 
-//SELECT BUTTONS
+// =====================
+// SELECT BUTTONS
+// =====================
 const expenseBtn = document.querySelector(".first-tab");
 const incomeBtn = document.querySelector(".second-tab");
 const allBtn = document.querySelector(".third-tab");
 
-//INPUT BTS
+// =====================
+// INPUT ELEMENTS
+// =====================
 const addExpense = document.querySelector(".add-expense");
 const expenseTitle = document.getElementById("expense-title-input");
 const expenseAmount = document.getElementById("expense-amount-input");
@@ -23,56 +31,98 @@ const addIncome = document.querySelector(".add-income");
 const incomeTitle = document.getElementById("income-title-input");
 const incomeAmount = document.getElementById("income-amount-input");
 
-//VARIABLES
+// =====================
+// STATE VARIABLES
+// =====================
 let ENTRY_LIST;
-let balance = 0,
-  income = 0,
-  outcome = 0;
+let balance = 0;
+let income = 0;
+let outcome = 0;
 
-const DELETE = "delete",
-  EDIT = "edit";
+// Action identifiers
+const DELETE = "delete";
+const EDIT = "edit";
 
+// Validation message
 const AMOUNT_ERROR = "Please enter a valid positive amount.";
 
-// INIT
-ENTRY_LIST = JSON.parse(localStorage.getItem("entry_list")) || [];
+// =====================
+// LOCAL STORAGE HANDLING
+// =====================
 
-/* istanbul ignore next */
+// Load entries safely from localStorage
+function loadEntries() {
+  try {
+    const savedData = localStorage.getItem("entry_list");
+
+    if (!savedData) return [];
+
+    const parsedData = JSON.parse(savedData);
+
+    if (!Array.isArray(parsedData)) {
+      throw new Error("Invalid entry list format");
+    }
+
+    return parsedData;
+  } catch (error) {
+    console.error("Failed to load entries:", error);
+
+    // Reset corrupted data
+    localStorage.removeItem("entry_list");
+    alert("Saved data was corrupted and has been reset.");
+
+    return [];
+  }
+}
+
+// Save entries safely to localStorage
+function saveEntries() {
+  try {
+    localStorage.setItem("entry_list", JSON.stringify(ENTRY_LIST));
+  } catch (error) {
+    console.error("Failed to save entries:", error);
+    alert("Unable to save budget data.");
+  }
+}
+
+// Initialize data
+ENTRY_LIST = loadEntries();
 updateUI();
 
-//EVENT LISTENERS
-/* istanbul ignore next */
-expenseBtn.addEventListener("click", function () {
+// =====================
+// EVENT LISTENERS
+// =====================
+
+// Tab switching
+expenseBtn.addEventListener("click", () => {
   show(expenseEl);
   hide([incomeEl, allEl]);
   active(expenseBtn);
   inactive([incomeBtn, allBtn]);
 });
 
-/* istanbul ignore next */
-incomeBtn.addEventListener("click", function () {
+incomeBtn.addEventListener("click", () => {
   show(incomeEl);
   hide([expenseEl, allEl]);
   active(incomeBtn);
   inactive([expenseBtn, allBtn]);
 });
 
-/* istanbul ignore next */
-allBtn.addEventListener("click", function () {
+allBtn.addEventListener("click", () => {
   show(allEl);
   hide([incomeEl, expenseEl]);
   active(allBtn);
   inactive([incomeBtn, expenseBtn]);
 });
 
-/* istanbul ignore next */
-addExpense.addEventListener("click", function () {
+// Add expense
+addExpense.addEventListener("click", () => {
   if (!expenseTitle.value) return;
 
   const amount = getPositiveAmount(expenseAmount);
   if (amount === null) return;
 
-  let expense = {
+  const expense = {
     type: "expense",
     title: expenseTitle.value,
     amount: amount,
@@ -83,56 +133,56 @@ addExpense.addEventListener("click", function () {
   clearInput([expenseTitle, expenseAmount]);
 });
 
-/* istanbul ignore next */
-addIncome.addEventListener("click", function () {
+// Add income
+addIncome.addEventListener("click", () => {
   if (!incomeTitle.value) return;
 
   const amount = getPositiveAmount(incomeAmount);
   if (amount === null) return;
 
-  let income = {
+  const incomeEntry = {
     type: "income",
     title: incomeTitle.value,
     amount: amount,
   };
 
-  ENTRY_LIST.push(income);
+  ENTRY_LIST.push(incomeEntry);
   updateUI();
   clearInput([incomeTitle, incomeAmount]);
 });
 
-/* istanbul ignore next */
+// Handle delete/edit clicks
 incomeList.addEventListener("click", deleteOrEdit);
-/* istanbul ignore next */
 expenseList.addEventListener("click", deleteOrEdit);
-/* istanbul ignore next */
 allList.addEventListener("click", deleteOrEdit);
 
+// =====================
+// CORE FUNCTIONS
+// =====================
 
-// FUNCTIONS
-/* istanbul ignore next */
+// Decide whether to delete or edit an entry
 function deleteOrEdit(event) {
   const targetBtn = event.target;
   const entry = targetBtn.parentNode;
 
-  if (targetBtn.id == EDIT) {
+  if (targetBtn.id === EDIT) {
     editEntry(entry);
-  } else if (targetBtn.id == DELETE) {
+  } else if (targetBtn.id === DELETE) {
     deleteEntry(entry);
   }
 }
 
-/* istanbul ignore next */
+// Remove entry from list
 function deleteEntry(entry) {
   ENTRY_LIST.splice(entry.id, 1);
   updateUI();
 }
 
-/* istanbul ignore next */
+// Load entry data into inputs for editing
 function editEntry(entry) {
   const ENTRY = ENTRY_LIST[entry.id];
 
-  if (ENTRY.type == "income") {
+  if (ENTRY.type === "income") {
     incomeTitle.value = ENTRY.title;
     incomeAmount.value = ENTRY.amount;
   } else {
@@ -143,13 +193,13 @@ function editEntry(entry) {
   deleteEntry(entry);
 }
 
-/* istanbul ignore next */
+// Update UI and recalculate values
 function updateUI() {
   income = calculateTotal("income", ENTRY_LIST);
   outcome = calculateTotal("expense", ENTRY_LIST);
   balance = Math.abs(calculateBalance(income, outcome));
 
-  let sign = income >= outcome ? "$" : "-$";
+  const sign = income >= outcome ? "$" : "-$";
 
   balanceEl.innerHTML = `<small>${sign}</small>${balance}`;
   outcomeTotalEl.innerHTML = `<small>$</small>${outcome}`;
@@ -158,19 +208,22 @@ function updateUI() {
   clearElement([expenseList, incomeList, allList]);
 
   ENTRY_LIST.forEach((entry, index) => {
-    if (entry.type == "expense") {
+    if (entry.type === "expense") {
       showEntry(expenseList, entry.type, entry.title, entry.amount, index);
     } else {
       showEntry(incomeList, entry.type, entry.title, entry.amount, index);
     }
+
     showEntry(allList, entry.type, entry.title, entry.amount, index);
   });
 
   updateChart(income, outcome);
-  localStorage.setItem("entry_list", JSON.stringify(ENTRY_LIST));
+
+  // Persist data
+  saveEntries();
 }
 
-/* istanbul ignore next */
+// Render a single entry
 function showEntry(list, type, title, amount, id) {
   const li = document.createElement("li");
   li.id = id;
@@ -181,10 +234,10 @@ function showEntry(list, type, title, amount, id) {
   entryDiv.textContent = `${title} : $${amount}`;
 
   const editDiv = document.createElement("div");
-  editDiv.id = "edit";
+  editDiv.id = EDIT;
 
   const deleteDiv = document.createElement("div");
-  deleteDiv.id = "delete";
+  deleteDiv.id = DELETE;
 
   li.appendChild(entryDiv);
   li.appendChild(editDiv);
@@ -193,23 +246,29 @@ function showEntry(list, type, title, amount, id) {
   list.insertBefore(li, list.firstChild);
 }
 
+// =====================
+// BUSINESS LOGIC
+// =====================
 
-// ===== LOGIC (YOU TEST THESE) =====
-
+// Calculate total income or expense
 function calculateTotal(type, list) {
   let sum = 0;
+
   list.forEach((entry) => {
-    if (entry.type == type) {
+    if (entry.type === type) {
       sum += entry.amount;
     }
   });
+
   return sum;
 }
 
+// Calculate balance
 function calculateBalance(income, outcome) {
   return income - outcome;
 }
 
+// Validate positive numeric input
 function getPositiveAmount(input) {
   const amount = Number(input.value);
 
@@ -223,46 +282,54 @@ function getPositiveAmount(input) {
   return amount;
 }
 
+// =====================
+// HELPER FUNCTIONS
+// =====================
 
-// ===== SMALL HELPERS =====
-
+// Clear list elements
 function clearElement(elements) {
   elements.forEach((element) => {
     element.innerHTML = "";
   });
 }
 
+// Clear input fields
 function clearInput(inputs) {
   inputs.forEach((input) => {
     input.value = "";
   });
 }
 
+// Show element
 function show(element) {
   element.classList.remove("hide");
 }
 
+// Hide elements
 function hide(elements) {
   elements.forEach((element) => {
     element.classList.add("hide");
   });
 }
 
+// Activate tab
 function active(element) {
   element.classList.add("focus");
 }
 
+// Deactivate tabs
 function inactive(elements) {
   elements.forEach((element) => {
     element.classList.remove("focus");
   });
 }
 
-
-// EXPORT FOR TEST
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { 
-    calculateTotal, 
+// =====================
+// EXPORT FOR TESTING
+// =====================
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    calculateTotal,
     calculateBalance,
     getPositiveAmount,
     show,
@@ -270,6 +337,6 @@ if (typeof module !== 'undefined' && module.exports) {
     active,
     inactive,
     clearInput,
-    clearElement
+    clearElement,
   };
 }
