@@ -1,0 +1,18 @@
+{
+  "name": "budget-app-input-fix",
+  "version": "1.0.0",
+  "description": "Welcome to the Budget App! This project is the result of following a comprehensive YouTube tutorial that guides you through building a budget management application from scratch. With this app, you can efficiently track your income, expenses, and overall budget, gaining better control of your financial situation.",
+  "main": "budget.js",
+  "scripts": {
+    "test": "jest --env=jsdom",
+    "coverage": "jest --coverage --env=jsdom"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0"
+  }
+}
