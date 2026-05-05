@@ -327,7 +327,7 @@ function inactive(elements) {
 // =====================
 // EXPORT FOR TESTING
 // =====================
-if (typeof module !== "undefined" && module.exports) {
+if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     calculateTotal,
     calculateBalance,
@@ -338,5 +338,7 @@ if (typeof module !== "undefined" && module.exports) {
     inactive,
     clearInput,
     clearElement,
+    loadEntries,
+    saveEntries
   };
 }

@@ -22,7 +22,9 @@ const {
     active,
     inactive,
     clearInput,
-    clearElement
+    clearElement,
+    loadEntries,
+    saveEntries
 } = require('./budget.js');
 
 
@@ -183,5 +185,43 @@ describe("additional coverage tests", () => {
         getPositiveAmount(input);
 
         expect(input.value).toBe("50");
+    });
+});
+
+// ===== Error handling tests =====
+
+describe('localStorage error handling', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        jest.clearAllMocks();
+    });
+
+    test('loadEntries should return empty array when no saved data exists', () => {
+        expect(loadEntries()).toEqual([]);
+    });
+
+    test('loadEntries should return parsed entries for valid localStorage data', () => {
+        const mockEntries = [
+            { type: 'income', title: 'Salary', amount: 1000 }
+        ];
+
+        localStorage.setItem('entry_list', JSON.stringify(mockEntries));
+
+        expect(loadEntries()).toEqual(mockEntries);
+    });
+
+    test('loadEntries should reset corrupted localStorage data', () => {
+        localStorage.setItem('entry_list', '{ broken json');
+
+        expect(loadEntries()).toEqual([]);
+        expect(localStorage.getItem('entry_list')).toBeNull();
+        expect(global.alert).toHaveBeenCalled();
+    });
+
+    test('loadEntries should reject non-array localStorage data', () => {
+        localStorage.setItem('entry_list', JSON.stringify({ invalid: true }));
+
+        expect(loadEntries()).toEqual([]);
+        expect(localStorage.getItem('entry_list')).toBeNull();
     });
 });
