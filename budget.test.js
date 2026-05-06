@@ -91,52 +91,59 @@ describe('getPositiveAmount validation', () => {
 });
 
 
-// ===== UI helper function tests (for coverage improvement) =====
+// ===== UI helper function tests (Enhanced by UI/UX update) =====
 
-// Test simple DOM helper utilities
+// Test DOM helper utilities including multi-element handling for UI transitions
 describe('UI helper functions', () => {
 
-    test('show should remove "hide" class', () => {
+    test('show should remove "hide" class from a single element', () => {
         const div = document.createElement('div');
         div.classList.add('hide');
-
         show(div);
-
         expect(div.classList.contains('hide')).toBe(false);
     });
 
-    test('hide should add "hide" class', () => {
-        const div = document.createElement('div');
+    // 【新增】测试 hide 函数能否正确处理包含多个元素的数组
+    test('hide should add "hide" class to multiple elements in an array', () => {
+        const div1 = document.createElement('div');
+        const div2 = document.createElement('div');
 
-        hide([div]);
+        hide([div1, div2]);
 
-        expect(div.classList.contains('hide')).toBe(true);
+        expect(div1.classList.contains('hide')).toBe(true);
+        expect(div2.classList.contains('hide')).toBe(true);
     });
 
-    test('active should add "focus" class', () => {
+    test('active should add "focus" class for active tab styling', () => {
         const div = document.createElement('div');
-
         active(div);
-
         expect(div.classList.contains('focus')).toBe(true);
     });
 
-    test('inactive should remove "focus" class', () => {
-        const div = document.createElement('div');
-        div.classList.add('focus');
+    // 【新增】测试 inactive 函数能否正确清除多个标签的焦点状态
+    test('inactive should remove "focus" class from multiple tab elements', () => {
+        const tab1 = document.createElement('div');
+        const tab2 = document.createElement('div');
+        tab1.classList.add('focus');
+        tab2.classList.add('focus');
 
-        inactive([div]);
+        inactive([tab1, tab2]);
 
-        expect(div.classList.contains('focus')).toBe(false);
+        expect(tab1.classList.contains('focus')).toBe(false);
+        expect(tab2.classList.contains('focus')).toBe(false);
     });
 
-    test('clearInput should reset input value', () => {
-        const input = document.createElement('input');
-        input.value = '123';
+    // 【新增】测试 clearInput 对多个输入框的清理
+    test('clearInput should reset multiple input values', () => {
+        const input1 = document.createElement('input');
+        const input2 = document.createElement('input');
+        input1.value = '123';
+        input2.value = '456';
 
-        clearInput([input]);
+        clearInput([input1, input2]);
 
-        expect(input.value).toBe('');
+        expect(input1.value).toBe('');
+        expect(input2.value).toBe('');
     });
 
     test('clearElement should remove all inner HTML content', () => {
