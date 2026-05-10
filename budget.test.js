@@ -189,16 +189,16 @@ describe("additional coverage tests", () => {
 // ===== Simulated User Interactions (Replaces direct function calls) =====
 describe('User Interactions (Simulated Clicks)', () => {
     test('User click on add income button should process data and update UI', () => {
-        // 1. 获取输入框和添加按钮
+        // 1. Obtain the input box and the add button
         const titleInput = document.getElementById("income-title-input");
         const amountInput = document.getElementById("income-amount-input");
         const addBtn = document.querySelector(".add-income");
 
-        // 2. 模拟用户输入
+        // 2. Simulated user input
         titleInput.value = "Bonus";
         amountInput.value = "1000";
         
-        // 3. 模拟用户点击按钮！(这会自动触发 budget.js 里的监听器代码)
+        // 3. Simulate a user clicking the button! (This will automatically trigger the listener code in budget.js)
         addBtn.click(); 
 
         // 4. 验证页面上是否成功渲染了这条收入
@@ -213,14 +213,14 @@ describe('User Interactions (Simulated Clicks)', () => {
         const amountInput = document.getElementById("expense-amount-input");
         const addBtn = document.querySelector(".add-expense");
 
-        // 2. 模拟用户输入
+        // 2. Simulated user input
         titleInput.value = "Lunch";
         amountInput.value = "50";
         
-        // 3. 模拟用户点击按钮！
+        // 3. Simulate a user clicking the button
         addBtn.click(); 
 
-        // 4. 验证页面上是否成功渲染了这条支出
+        // 4. Check whether this expenditure has been successfully rendered on the verification page
         const expenseList = document.querySelector("#expense .list");
         expect(expenseList.innerHTML).toContain("Lunch");
         expect(expenseList.innerHTML).toContain("50");
@@ -230,10 +230,10 @@ describe('User Interactions (Simulated Clicks)', () => {
         const incomeTabBtn = document.querySelector(".second-tab");
         const incomePanel = document.querySelector("#income");
         
-        // 点击顶部的收入 Tab 按钮
+        // Click the "Income" tab button at the top.
         incomeTabBtn.click();
         
-        // 验证收入面板是否取消了隐藏状态
+        // Verify whether the hidden status of the income panel has been removed
         expect(incomePanel.classList.contains("hide")).toBe(false);
     });
 });
