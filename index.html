@@ -11,30 +11,38 @@
     <div class="budget-container">
       <div class="app-title">
         <a href="">Budget<b>App</b></a>
+        <div class="language-switcher" aria-label="Language switcher">
+          <button type="button" class="lang-btn" data-lang="en">EN</button>
+          <button type="button" class="lang-btn" data-lang="zh">中文</button>
+        </div>
+        <div class="currency-switcher">
+          <button class="currency-btn" data-currency="USD">$</button>
+          <button class="currency-btn" data-currency="CNY">¥</button>
+        </div>
       </div>
       <div class="budget-header">
         <div class="balance">
-          <div class="title">Balance</div>
+          <div class="title" data-i18n="balance">Balance</div>
           <div class="value"><small>$</small>0</div>
         </div>
         <div class="account">
           <div class="income">
-            <div class="title">Income</div>
+            <div class="title" data-i18n="income">Income</div>
             <div class="income-total"><small>$</small>0</div>
           </div>
           <div class="chart"></div>
           <div class="outcome">
-            <div class="title">Outcome</div>
+            <div class="title" data-i18n="outcome">Outcome</div>
             <div class="outcome-total"><small>$</small>0</div>
           </div>
         </div>
       </div>
       <div class="budget-dashboard">
-        <div class="dash-title">Dashboard</div>
+        <div class="dash-title" data-i18n="dashboard">Dashboard</div>
         <div class="toggle">
-          <div class="first-tab">Expenses</div>
-          <div class="second-tab">Income</div>
-          <div class="third-tab focus">All</div>
+          <div class="first-tab" data-i18n="expenses">Expenses</div>
+          <div class="second-tab" data-i18n="income">Income</div>
+          <div class="third-tab focus" data-i18n="all">All</div>
         </div>
         <div class="hide" id="expense">
           <ul class="list"></ul>
@@ -44,6 +52,7 @@
               id="expense-title-input"
               name="title"
               placeholder="title"
+              data-i18n-placeholder="titlePlaceholder"
             />
             <input
               type="number"
@@ -65,6 +74,7 @@
               id="income-title-input"
               name="title"
               placeholder="title"
+              data-i18n-placeholder="titlePlaceholder"
             />
             <input
               type="number"
@@ -86,9 +96,9 @@
 
     <div id="cookie-banner" class="cookie-banner hide">
         <div class="cookie-content">
-            <p>🍪 We use cookies and local storage to save your budget data securely on your device.</p>
+            <p data-i18n="cookieText">🍪 We use cookies and local storage to save your budget data securely on your device.</p>
         </div>
-        <button id="accept-cookies">Got it!</button>
+        <button id="accept-cookies" data-i18n="gotIt">Got it!</button>
     </div>
 
     <script src="./chart.js"></script>
