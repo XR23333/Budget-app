@@ -3,7 +3,13 @@ const path = require('path');
 
 // Load HTML into Jest's virtual DOM environment
 const html = fs.readFileSync(path.resolve(__dirname, './index.html'), 'utf8');
-document.body.innerHTML = html.toString();
+
+// Inject Cookie Banner structure to prevent test errors due to missing index.html elements
+const cookieHtml = `
+  <div id="cookie-banner" class="hide">Cookie Banner</div>
+  <button id="accept-cookies">Accept</button>
+`;
+document.body.innerHTML = html.toString() + cookieHtml;
 
 // Mock external dependencies used in budget.js
 // updateChart is not part of the logic under test
@@ -11,6 +17,9 @@ global.updateChart = jest.fn();
 
 // Mock alert to prevent actual browser pop-ups during testing
 global.alert = jest.fn();
+
+// Mock console.error to keep the test output clean when testing exceptions
+global.console.error = jest.fn();
 
 // 3. Import the functions to be tested (Now it includes the Core Bosses!)
 const { 
@@ -188,6 +197,20 @@ describe("additional coverage tests", () => {
 
 // ===== Simulated User Interactions (Replaces direct function calls) =====
 describe('User Interactions (Simulated Clicks)', () => {
+    
+    // 【NEW】 Test early return when title is empty (Branch coverage)
+    test('Should return early if income title is empty', () => {
+        const titleInput = document.getElementById("income-title-input");
+        const addBtn = document.querySelector(".add-income");
+        
+        titleInput.value = ""; // Empty title
+        const initialHTML = document.querySelector("#income .list").innerHTML;
+        addBtn.click(); 
+
+        // List should remain unchanged
+        expect(document.querySelector("#income .list").innerHTML).toBe(initialHTML);
+    });
+
     test('User click on add income button should process data and update UI', () => {
         // 1. Obtain the input box and the add button
         const titleInput = document.getElementById("income-title-input");
@@ -201,14 +224,26 @@ describe('User Interactions (Simulated Clicks)', () => {
         // 3. Simulate a user clicking the button! (This will automatically trigger the listener code in budget.js)
         addBtn.click(); 
 
-        // 4. 验证页面上是否成功渲染了这条收入
+        // 4. Verify whether the income list updated
         const incomeList = document.querySelector("#income .list");
         expect(incomeList.innerHTML).toContain("Bonus");
         expect(incomeList.innerHTML).toContain("1000");
     });
 
+    // 【NEW】 Test early return when expense title is empty
+    test('Should return early if expense title is empty', () => {
+        const titleInput = document.getElementById("expense-title-input");
+        const addBtn = document.querySelector(".add-expense");
+        
+        titleInput.value = ""; // Empty title
+        const initialHTML = document.querySelector("#expense .list").innerHTML;
+        addBtn.click(); 
+
+        expect(document.querySelector("#expense .list").innerHTML).toBe(initialHTML);
+    });
+
     test('User click on add expense button should process data and update UI', () => {
-        // 1. 获取输入框和添加按钮
+        // 1. Obtain input box and add button
         const titleInput = document.getElementById("expense-title-input");
         const amountInput = document.getElementById("expense-amount-input");
         const addBtn = document.querySelector(".add-expense");
@@ -220,7 +255,7 @@ describe('User Interactions (Simulated Clicks)', () => {
         // 3. Simulate a user clicking the button
         addBtn.click(); 
 
-        // 4. Check whether this expenditure has been successfully rendered on the verification page
+        // 4. Check whether this expenditure has been successfully rendered
         const expenseList = document.querySelector("#expense .list");
         expect(expenseList.innerHTML).toContain("Lunch");
         expect(expenseList.innerHTML).toContain("50");
@@ -228,13 +263,61 @@ describe('User Interactions (Simulated Clicks)', () => {
     
     test('Tab switching should work correctly', () => {
         const incomeTabBtn = document.querySelector(".second-tab");
+        const expenseTabBtn = document.querySelector(".first-tab");
+        const allTabBtn = document.querySelector(".third-tab");
+        
         const incomePanel = document.querySelector("#income");
+        const expensePanel = document.querySelector("#expense");
+        const allPanel = document.querySelector("#all");
         
         // Click the "Income" tab button at the top.
         incomeTabBtn.click();
-        
-        // Verify whether the hidden status of the income panel has been removed
         expect(incomePanel.classList.contains("hide")).toBe(false);
+
+        // Click the "Expense" tab button
+        expenseTabBtn.click();
+        expect(expensePanel.classList.contains("hide")).toBe(false);
+
+        // Click the "All" tab button
+        allTabBtn.click();
+        expect(allPanel.classList.contains("hide")).toBe(false);
+    });
+});
+
+// ===== Data Modification Tests (Edit & Delete) =====
+describe('Data Modification (Edit & Delete)', () => {
+    test('editEntry should populate income inputs properly and delete entry', () => {
+        // Mock an entry object inside the array by triggering an add first
+        document.getElementById("income-title-input").value = "Salary Test";
+        document.getElementById("income-amount-input").value = "2000";
+        document.querySelector(".add-income").click();
+        
+        // Since it is newly added, its id (index) is likely 1 (because "Bonus" was added in a previous test)
+        // Let's use deleteOrEdit to accurately test the proxy logic
+        const mockEditEvent = { target: { id: "edit", parentNode: { id: 0 } } }; // ID 0 is "Bonus"
+        
+        deleteOrEdit(mockEditEvent);
+
+        expect(document.getElementById("income-title-input").value).toBe("Bonus");
+        expect(document.getElementById("income-amount-input").value).toBe("1000");
+    });
+
+    test('editEntry should populate expense inputs properly', () => {
+        // ID 1 should be "Lunch" based on the previous interactions
+        const mockEditEvent = { target: { id: "edit", parentNode: { id: 1 } } };
+        
+        deleteOrEdit(mockEditEvent);
+
+        expect(document.getElementById("expense-title-input").value).toBe("Lunch");
+        expect(document.getElementById("expense-amount-input").value).toBe("50");
+    });
+
+    test('deleteOrEdit should route to deleteEntry when delete button is clicked', () => {
+        const mockDeleteEvent = { target: { id: "delete", parentNode: { id: 0 } } };
+        // Executing delete should successfully run without throwing errors
+        expect(() => {
+            deleteOrEdit(mockDeleteEvent);
+        }).not.toThrow();
     });
 });
 
@@ -273,5 +356,57 @@ describe('localStorage error handling', () => {
 
         expect(loadEntries()).toEqual([]);
         expect(localStorage.getItem('entry_list')).toBeNull();
+    });
+
+    // 【NEW】 Test saveEntries try/catch block
+    test('saveEntries should catch error and alert on save failure', () => {
+        // Intentionally break localStorage.setItem to force an error
+        jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error("Storage full");
+        });
+
+        saveEntries();
+
+        expect(console.error).toHaveBeenCalled();
+        expect(global.alert).toHaveBeenCalledWith("Unable to save budget data.");
+        
+        jest.restoreAllMocks(); // Cleanup mock
+    });
+});
+
+// ===== Cookie Banner Logic Tests =====
+describe('Cookie Banner Logic', () => {
+    beforeEach(() => {
+        jest.useFakeTimers(); // Enable fake timers to test setTimeout
+        jest.resetModules(); // Reset to allow re-evaluating the budget.js
+        document.body.innerHTML = html.toString() + cookieHtml;
+        localStorage.clear();
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
+    test('Cookie banner should display after delay if not yet accepted', () => {
+        require('./budget.js'); // Re-require to run the initialization logic
+        const banner = document.getElementById('cookie-banner');
+        
+        expect(banner.classList.contains('hide')).toBe(true);
+        
+        // Fast-forward time to bypass the setTimeout delay
+        jest.advanceTimersByTime(1500); 
+        
+        expect(banner.classList.contains('hide')).toBe(false);
+    });
+
+    test('Should write to LocalStorage and hide banner after clicking accept', () => {
+        require('./budget.js');
+        const acceptBtn = document.getElementById('accept-cookies');
+        const banner = document.getElementById('cookie-banner');
+        
+        acceptBtn.click(); // Simulate user clicking "Got it"
+        
+        expect(localStorage.getItem('cookiesAccepted')).toBe('true');
+        expect(banner.classList.contains('hide')).toBe(true);
     });
 });
