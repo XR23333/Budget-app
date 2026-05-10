@@ -506,3 +506,56 @@ input[type="number"] {
   height: 2px;
   background: #2a0355;
 }
+/* ==================== COOKIE BANNER UI ==================== */
+.cookie-banner {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 400px;
+    background-color: #2a0355;
+    color: #fff;
+    padding: 15px 20px;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 9999;
+    transition: all 0.5s ease-in-out;
+}
+
+/* 覆盖全局的 hide 行为，专门为 banner 做滑出动画 */
+.cookie-banner.hide {
+    bottom: -100px !important; /* 隐藏时退到屏幕外面 */
+    opacity: 0 !important;
+    pointer-events: none;
+    display: flex; /* 保持 flex 布局以配合动画 */
+}
+
+.cookie-content p {
+    margin: 0;
+    font-size: 0.85em;
+    line-height: 1.4;
+    color: rgba(255,255,255,0.8);
+    font-family: "Gilroy", sans-serif;
+}
+
+#accept-cookies {
+    background-color: #f0624d;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-family: "Gilroy Bold", sans-serif;
+    cursor: pointer;
+    margin-left: 15px;
+    transition: transform 0.2s, background-color 0.2s;
+    white-space: nowrap;
+}
+
+#accept-cookies:hover {
+    transform: scale(1.05);
+    background-color: #ff7661;
+}

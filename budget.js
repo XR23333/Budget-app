@@ -342,3 +342,26 @@ if (typeof module !== 'undefined' && module.exports) {
     saveEntries
   };
 }
+// ==================== COOKIE BANNER LOGIC ====================
+const cookieBanner = document.getElementById('cookie-banner');
+const acceptCookiesBtn = document.getElementById('accept-cookies');
+
+if (cookieBanner && acceptCookiesBtn) {
+    
+    const cookiesAccepted = localStorage.getItem('cookiesAccepted');
+
+    if (!cookiesAccepted) {
+        
+        setTimeout(() => {
+            cookieBanner.classList.remove('hide');
+        }, 1000);
+    }
+
+    
+    acceptCookiesBtn.addEventListener('click', () => {
+        
+        localStorage.setItem('cookiesAccepted', 'true');
+        
+        cookieBanner.classList.add('hide');
+    });
+}
