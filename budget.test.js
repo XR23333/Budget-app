@@ -1,463 +1,723 @@
 const fs = require('fs');
 const path = require('path');
 
-// Load HTML into Jest's virtual DOM environment
 const html = fs.readFileSync(path.resolve(__dirname, './index.html'), 'utf8');
 
-// Inject Cookie Banner structure to prevent test errors due to missing index.html elements
 const cookieHtml = `
   <div id="cookie-banner" class="hide">Cookie Banner</div>
   <button id="accept-cookies">Accept</button>
 `;
-document.body.innerHTML = html.toString() + cookieHtml;
 
-// Mock external dependencies used in budget.js
-// updateChart is not part of the logic under test
-global.updateChart = jest.fn();
+function setupDOM() {
+  document.body.innerHTML = html.toString() + cookieHtml;
+  global.updateChart = jest.fn();
+  global.alert = jest.fn();
+  global.console.error = jest.fn();
+}
 
-// Mock alert to prevent actual browser pop-ups during testing
-global.alert = jest.fn();
+function loadBudgetModule() {
+  jest.resetModules();
+  setupDOM();
+  return require('./budget.js');
+}
 
-// Mock console.error to keep the test output clean when testing exceptions
-global.console.error = jest.fn();
-
-// 3. Import the functions to be tested (Now it includes the Core Bosses!)
-const { 
-    loadEntries, saveEntries, deleteOrEdit,
-    deleteEntry, editEntry, updateUI, showEntry,
-    calculateTotal, calculateBalance,
-    getPositiveAmount, clearElement, clearInput,
-    show, hide, active, inactive
-} = require('./budget.js');
-
-
-// ===== Core logic tests =====
-
-// Test balance calculation logic
-describe('calculateBalance', () => {
-    test('should correctly compute income minus outcome', () => {
-        expect(calculateBalance(1000, 400)).toBe(600);
-        expect(calculateBalance(500, 600)).toBe(-100); // negative balance allowed
-    });
+beforeEach(() => {
+  localStorage.clear();
+  jest.clearAllMocks();
 });
 
-// Test total calculation by type
-describe('calculateTotal', () => {
-    test('should correctly sum values based on type', () => {
-        const list = [
-            { type: 'income', amount: 500 },
-            { type: 'expense', amount: 200 },
-            { type: 'income', amount: 100 }
-        ];
+describe('business logic', () => {
+  test('calculateTotal should sum only matching entry types and round to two decimals', () => {
+    const budget = loadBudgetModule();
+    const entries = [
+      { type: 'income', title: 'Salary', amount: 100.111 },
+      { type: 'income', title: 'Bonus', amount: 50.225 },
+      { type: 'expense', title: 'Lunch', amount: 20 },
+    ];
 
-        expect(calculateTotal('income', list)).toBe(600);
-        expect(calculateTotal('expense', list)).toBe(200);
-    });
+    expect(budget.calculateTotal('income', entries)).toBe(150.34);
+    expect(budget.calculateTotal('expense', entries)).toBe(20);
+    expect(budget.calculateTotal('saving', entries)).toBe(0);
+  });
+
+  test('calculateTotal should return 0 for an empty list', () => {
+    const budget = loadBudgetModule();
+
+    expect(budget.calculateTotal('income', [])).toBe(0);
+  });
+
+  test('calculateBalance should return income minus outcome rounded to two decimals', () => {
+    const budget = loadBudgetModule();
+
+    expect(budget.calculateBalance(500, 125.337)).toBe(374.66);
+    expect(budget.calculateBalance(100, 300)).toBe(-200);
+    expect(budget.calculateBalance(0, 0)).toBe(0);
+  });
 });
 
+describe('currency helpers', () => {
+  test('default currency should be USD', () => {
+    const budget = loadBudgetModule();
 
-// ===== Input validation tests (new feature) =====
+    expect(budget.currencySymbol()).toBe('$');
+    expect(budget.getCurrencyRate()).toBe(1);
+    expect(budget.toDisplayAmount(10)).toBe(10);
+    expect(budget.toBaseAmount(10)).toBe(10);
+    expect(budget.formatAmount(10.5)).toBe('10.50');
+  });
 
-// Ensure only valid positive numbers are accepted
-describe('getPositiveAmount validation', () => {
+  test('applyCurrency should switch to CNY and convert display/base amounts', () => {
+    const budget = loadBudgetModule();
 
-    test('should accept a valid positive number', () => {
-        const input = document.createElement('input');
-        input.value = '100';
+    budget.applyCurrency('CNY');
 
-        expect(getPositiveAmount(input)).toBe(100);
-    });
+    expect(localStorage.getItem('currency')).toBe('CNY');
+    expect(budget.currencySymbol()).toBe('¥');
+    expect(budget.getCurrencyRate()).toBe(7);
+    expect(budget.toDisplayAmount(10)).toBe(70);
+    expect(budget.toBaseAmount(70)).toBe(10);
+    expect(budget.formatAmount(10.5)).toBe('73.50');
+  });
 
-    test('should reject zero value', () => {
-        const input = document.createElement('input');
-        input.value = '0';
-        input.focus = jest.fn();
+  test('applyCurrency should fall back to USD for invalid currency code', () => {
+    const budget = loadBudgetModule();
 
-        expect(getPositiveAmount(input)).toBeNull();
-    });
+    budget.applyCurrency('EUR');
 
-    test('should reject negative numbers', () => {
-        const input = document.createElement('input');
-        input.value = '-50';
-        input.focus = jest.fn();
+    expect(budget.currencySymbol()).toBe('$');
+    expect(localStorage.getItem('currency')).toBe('USD');
+  });
 
-        expect(getPositiveAmount(input)).toBeNull();
-    });
+  test('invalid saved currency should fall back to USD on module load', () => {
+    localStorage.setItem('currency', 'EUR');
 
-    test('should reject non-numeric input', () => {
-        const input = document.createElement('input');
-        input.value = 'abc';
-        input.focus = jest.fn();
+    const budget = loadBudgetModule();
 
-        expect(getPositiveAmount(input)).toBeNull();
-    });
+    expect(budget.currencySymbol()).toBe('$');
+    expect(budget.getCurrencyRate()).toBe(1);
+  });
+
+  test('amount placeholders should use the current currency symbol', () => {
+    const budget = loadBudgetModule();
+    const incomeAmount = document.getElementById('income-amount-input');
+    const expenseAmount = document.getElementById('expense-amount-input');
+
+    budget.applyCurrency('CNY');
+
+    expect(incomeAmount.placeholder).toBe('¥0');
+    expect(expenseAmount.placeholder).toBe('¥0');
+  });
+
+  test('formatAmount should return integer values without decimal places', () => {
+    const budget = loadBudgetModule();
+
+    expect(budget.formatAmount(100)).toBe('100');
+  });
 });
 
+describe('language helpers', () => {
+  test('t should return translated text for current language', () => {
+    const budget = loadBudgetModule();
 
-// ===== UI helper function tests (Enhanced by UI/UX update) =====
+    expect(budget.t('balance')).toBe('Balance');
 
-// Test DOM helper utilities including multi-element handling for UI transitions
+    budget.applyLanguage('zh');
+
+    expect(localStorage.getItem('language')).toBe('zh');
+    expect(document.documentElement.lang).toBe('zh');
+    expect(budget.t('balance')).toBe('余额');
+    expect(budget.t('amountError')).toBe('请输入有效的正数金额。');
+  });
+
+  test('applyLanguage should fall back to English for invalid language', () => {
+    const budget = loadBudgetModule();
+
+    budget.applyLanguage('fr');
+
+    expect(localStorage.getItem('language')).toBe('en');
+    expect(document.documentElement.lang).toBe('en');
+    expect(budget.t('dashboard')).toBe('Dashboard');
+  });
+
+  test('t should return key itself when translation does not exist', () => {
+    const budget = loadBudgetModule();
+
+    expect(budget.t('unknownKey')).toBe('unknownKey');
+  });
+
+  test('language buttons should update active-lang class', () => {
+    const budget = loadBudgetModule();
+    const zhButton = document.querySelector('.lang-btn[data-lang="zh"]');
+    const enButton = document.querySelector('.lang-btn[data-lang="en"]');
+
+    if (!zhButton || !enButton) {
+      return;
+    }
+
+    budget.applyLanguage('zh');
+
+    expect(zhButton.classList.contains('active-lang')).toBe(true);
+    expect(enButton.classList.contains('active-lang')).toBe(false);
+  });
+});
+
+describe('amount validation', () => {
+  test('getPositiveAmount should accept positive numbers with current currency symbol', () => {
+    const budget = loadBudgetModule();
+    const input = document.createElement('input');
+
+    input.value = '$120.50';
+
+    expect(budget.getPositiveAmount(input)).toBe(120.5);
+    expect(global.alert).not.toHaveBeenCalled();
+  });
+
+  test('getPositiveAmount should accept CNY input with currency symbol', () => {
+    const budget = loadBudgetModule();
+    const input = document.createElement('input');
+
+    budget.applyCurrency('CNY');
+    input.value = '¥70';
+
+    expect(budget.getPositiveAmount(input)).toBe(70);
+  });
+
+  test('getPositiveAmount should reject zero, negative, and non-numeric values', () => {
+    const budget = loadBudgetModule();
+
+    ['0', '-1', 'abc'].forEach((value) => {
+      const input = document.createElement('input');
+      input.value = value;
+      input.focus = jest.fn();
+
+      expect(budget.getPositiveAmount(input)).toBeNull();
+      expect(input.value).toBe('');
+      expect(input.focus).toHaveBeenCalled();
+    });
+
+    expect(global.alert).toHaveBeenCalledTimes(3);
+  });
+
+  test('getPositiveAmount should reject Infinity and NaN values', () => {
+    const budget = loadBudgetModule();
+
+    ['Infinity', 'NaN'].forEach((value) => {
+      const input = document.createElement('input');
+      input.value = value;
+      input.focus = jest.fn();
+
+      expect(budget.getPositiveAmount(input)).toBeNull();
+      expect(input.value).toBe('');
+      expect(input.focus).toHaveBeenCalled();
+    });
+  });
+
+  test('validation alert should follow selected language', () => {
+    const budget = loadBudgetModule();
+    const input = document.createElement('input');
+    input.value = 'bad';
+    input.focus = jest.fn();
+
+    budget.applyLanguage('zh');
+    budget.getPositiveAmount(input);
+
+    expect(global.alert).toHaveBeenCalledWith('请输入有效的正数金额。');
+  });
+});
+
 describe('UI helper functions', () => {
+  test('show and hide should toggle hide class', () => {
+    const budget = loadBudgetModule();
+    const one = document.createElement('div');
+    const two = document.createElement('div');
 
-    test('show should remove "hide" class from a single element', () => {
-        const div = document.createElement('div');
-        div.classList.add('hide');
-        show(div);
-        expect(div.classList.contains('hide')).toBe(false);
-    });
+    budget.hide([one, two]);
+    expect(one.classList.contains('hide')).toBe(true);
+    expect(two.classList.contains('hide')).toBe(true);
 
-    test('hide should add "hide" class to multiple elements in an array', () => {
-        const div1 = document.createElement('div');
-        const div2 = document.createElement('div');
+    budget.show(one);
+    expect(one.classList.contains('hide')).toBe(false);
+  });
 
-        hide([div1, div2]);
+  test('active and inactive should toggle focus class', () => {
+    const budget = loadBudgetModule();
+    const one = document.createElement('button');
+    const two = document.createElement('button');
 
-        expect(div1.classList.contains('hide')).toBe(true);
-        expect(div2.classList.contains('hide')).toBe(true);
-    });
+    budget.active(one);
+    expect(one.classList.contains('focus')).toBe(true);
 
-    test('active should add "focus" class for active tab styling', () => {
-        const div = document.createElement('div');
-        active(div);
-        expect(div.classList.contains('focus')).toBe(true);
-    });
+    budget.active(two);
+    budget.inactive([one, two]);
+    expect(one.classList.contains('focus')).toBe(false);
+    expect(two.classList.contains('focus')).toBe(false);
+  });
 
-    test('inactive should remove "focus" class from multiple tab elements', () => {
-        const tab1 = document.createElement('div');
-        const tab2 = document.createElement('div');
-        tab1.classList.add('focus');
-        tab2.classList.add('focus');
+  test('clearElement and clearInput should reset DOM content and values', () => {
+    const budget = loadBudgetModule();
+    const div = document.createElement('div');
+    const input = document.createElement('input');
 
-        inactive([tab1, tab2]);
+    div.innerHTML = '<span>hello</span>';
+    input.value = '123';
 
-        expect(tab1.classList.contains('focus')).toBe(false);
-        expect(tab2.classList.contains('focus')).toBe(false);
-    });
+    budget.clearElement([div]);
+    budget.clearInput([input]);
 
-    test('clearInput should reset multiple input values', () => {
-        const input1 = document.createElement('input');
-        const input2 = document.createElement('input');
-        input1.value = '123';
-        input2.value = '456';
-
-        clearInput([input1, input2]);
-
-        expect(input1.value).toBe('');
-        expect(input2.value).toBe('');
-    });
-
-    test('clearElement should remove all inner HTML content', () => {
-        const div = document.createElement('div');
-        div.innerHTML = '<p>test</p>';
-
-        clearElement([div]);
-
-        expect(div.innerHTML).toBe('');
-    });
+    expect(div.innerHTML).toBe('');
+    expect(input.value).toBe('');
+  });
 });
 
+describe('rendering and user interactions', () => {
+  test('adding income should update income list, all list, totals, and localStorage', () => {
+    loadBudgetModule();
 
-// ===== Additional edge case tests =====
+    document.getElementById('income-title-input').value = 'Salary';
+    document.getElementById('income-amount-input').value = '1000';
+    document.querySelector('.add-income').click();
 
-// Improve coverage by testing boundary conditions
-describe("additional coverage tests", () => {
+    expect(document.querySelector('#income .list').textContent).toContain('Salary : $1000');
+    expect(document.querySelector('#all .list').textContent).toContain('Salary : $1000');
+    expect(document.querySelector('.income-total').innerHTML).toContain('1000');
+    expect(JSON.parse(localStorage.getItem('entry_list'))).toEqual([
+      { type: 'income', title: 'Salary', amount: 1000 },
+    ]);
+  });
 
-    test("calculateTotal should return 0 for empty list", () => {
-        expect(calculateTotal("income", [])).toBe(0);
+  test('adding expense should update expense list, all list, and outcome total', () => {
+    loadBudgetModule();
+
+    document.getElementById('expense-title-input').value = 'Lunch';
+    document.getElementById('expense-amount-input').value = '50';
+    document.querySelector('.add-expense').click();
+
+    expect(document.querySelector('#expense .list').textContent).toContain('Lunch : $50');
+    expect(document.querySelector('#all .list').textContent).toContain('Lunch : $50');
+    expect(document.querySelector('.outcome-total').innerHTML).toContain('50');
+  });
+
+  test('balance should display negative sign when expenses are greater than income', () => {
+    loadBudgetModule();
+
+    document.getElementById('expense-title-input').value = 'Rent';
+    document.getElementById('expense-amount-input').value = '500';
+    document.querySelector('.add-expense').click();
+
+    expect(document.querySelector('.balance .value').innerHTML).toContain('-$');
+    expect(document.querySelector('.balance .value').innerHTML).toContain('500');
+  });
+
+  test('empty income title should not add a new income entry', () => {
+    loadBudgetModule();
+
+    document.getElementById('income-title-input').value = '';
+    document.getElementById('income-amount-input').value = '100';
+    document.querySelector('.add-income').click();
+
+    expect(document.querySelector('#income .list').children.length).toBe(0);
+    expect(JSON.parse(localStorage.getItem('entry_list'))).toEqual([]);
+  });
+
+  test('empty expense title should not add a new expense entry', () => {
+    loadBudgetModule();
+
+    document.getElementById('expense-title-input').value = '';
+    document.getElementById('expense-amount-input').value = '100';
+    document.querySelector('.add-expense').click();
+
+    expect(document.querySelector('#expense .list').children.length).toBe(0);
+    expect(JSON.parse(localStorage.getItem('entry_list'))).toEqual([]);
+  });
+
+  test('invalid income amount should not add a new income entry', () => {
+    loadBudgetModule();
+
+    document.getElementById('income-title-input').value = 'Invalid Income';
+    document.getElementById('income-amount-input').value = '-100';
+    document.querySelector('.add-income').click();
+
+    expect(document.querySelector('#income .list').children.length).toBe(0);
+    expect(JSON.parse(localStorage.getItem('entry_list'))).toEqual([]);
+    expect(global.alert).toHaveBeenCalled();
+  });
+
+  test('invalid expense amount should not add a new expense entry', () => {
+    loadBudgetModule();
+
+    document.getElementById('expense-title-input').value = 'Invalid Expense';
+    document.getElementById('expense-amount-input').value = '0';
+    document.querySelector('.add-expense').click();
+
+    expect(document.querySelector('#expense .list').children.length).toBe(0);
+    expect(JSON.parse(localStorage.getItem('entry_list'))).toEqual([]);
+    expect(global.alert).toHaveBeenCalled();
+  });
+
+  test('expense button should switch to expense panel', () => {
+    loadBudgetModule();
+
+    document.querySelector('.first-tab').click();
+
+    expect(document.querySelector('#expense').classList.contains('hide')).toBe(false);
+    expect(document.querySelector('#income').classList.contains('hide')).toBe(true);
+    expect(document.querySelector('#all').classList.contains('hide')).toBe(true);
+    expect(document.querySelector('.first-tab').classList.contains('focus')).toBe(true);
+  });
+
+  test('tab buttons should switch visible panel and focused tab', () => {
+    loadBudgetModule();
+
+    document.querySelector('.second-tab').click();
+    expect(document.querySelector('#income').classList.contains('hide')).toBe(false);
+    expect(document.querySelector('.second-tab').classList.contains('focus')).toBe(true);
+
+    document.querySelector('.third-tab').click();
+    expect(document.querySelector('#all').classList.contains('hide')).toBe(false);
+    expect(document.querySelector('.third-tab').classList.contains('focus')).toBe(true);
+  });
+
+  test('language button click should switch language', () => {
+    loadBudgetModule();
+
+    const zhButton = document.querySelector('.lang-btn[data-lang="zh"]');
+
+    if (!zhButton) {
+      return;
+    }
+
+    zhButton.click();
+
+    expect(localStorage.getItem('language')).toBe('zh');
+    expect(document.documentElement.lang).toBe('zh');
+  });
+
+  test('currency button click should switch currency', () => {
+    loadBudgetModule();
+
+    const cnyButton = document.querySelector('.currency-btn[data-currency="CNY"]');
+
+    if (!cnyButton) {
+      return;
+    }
+
+    cnyButton.click();
+
+    expect(localStorage.getItem('currency')).toBe('CNY');
+  });
+
+  test('deleteOrEdit should edit an income entry through a real clicked edit button', () => {
+    loadBudgetModule();
+
+    document.getElementById('income-title-input').value = 'Freelance';
+    document.getElementById('income-amount-input').value = '300';
+    document.querySelector('.add-income').click();
+
+    document.querySelector('#income .list li #edit').click();
+
+    expect(document.getElementById('income-title-input').value).toBe('Freelance');
+    expect(document.getElementById('income-amount-input').value).toBe('300');
+    expect(document.querySelector('#income').classList.contains('hide')).toBe(false);
+  });
+
+  test('deleteOrEdit should edit an expense entry through a real clicked edit button', () => {
+    loadBudgetModule();
+
+    document.getElementById('expense-title-input').value = 'Coffee';
+    document.getElementById('expense-amount-input').value = '6';
+    document.querySelector('.add-expense').click();
+
+    document.querySelector('#expense .list li #edit').click();
+
+    expect(document.getElementById('expense-title-input').value).toBe('Coffee');
+    expect(document.getElementById('expense-amount-input').value).toBe('6');
+    expect(document.querySelector('#expense').classList.contains('hide')).toBe(false);
+  });
+
+  test('deleteOrEdit should route to deleteEntry when target id is delete', () => {
+    const budget = loadBudgetModule();
+
+    document.getElementById('income-title-input').value = 'Delete Route';
+    document.getElementById('income-amount-input').value = '100';
+    document.querySelector('.add-income').click();
+
+    const deleteButton = document.querySelector('#income .list li #delete');
+
+    budget.deleteOrEdit({
+      target: deleteButton,
     });
 
-    test("calculateTotal should return 0 when no matching type exists", () => {
-        const list = [{ type: "expense", amount: 100 }];
-        expect(calculateTotal("income", list)).toBe(0);
+    expect(JSON.parse(localStorage.getItem('entry_list'))).toEqual([]);
+    expect(document.querySelector('#income .list').children.length).toBe(0);
+  });
+
+  test('deleteOrEdit should route to editEntry when target id is edit', () => {
+    const budget = loadBudgetModule();
+
+    document.getElementById('income-title-input').value = 'Edit Route';
+    document.getElementById('income-amount-input').value = '200';
+    document.querySelector('.add-income').click();
+
+    const editButton = document.querySelector('#income .list li #edit');
+
+    budget.deleteOrEdit({
+      target: editButton,
     });
 
-    test("calculateBalance should handle zero values", () => {
-        expect(calculateBalance(0, 0)).toBe(0);
-    });
+    expect(document.getElementById('income-title-input').value).toBe('Edit Route');
+    expect(document.getElementById('income-amount-input').value).toBe('200');
+  });
 
-    test("getPositiveAmount should clear invalid input", () => {
-        const input = document.createElement("input");
-        input.value = "invalid";
-        input.focus = jest.fn();
+  test('editing an existing expense should replace it instead of adding another one', () => {
+    loadBudgetModule();
 
-        getPositiveAmount(input);
+    document.getElementById('expense-title-input').value = 'Dinner';
+    document.getElementById('expense-amount-input').value = '25';
+    document.querySelector('.add-expense').click();
 
-        expect(input.value).toBe("");
-    });
+    document.querySelector('#expense .list li #edit').click();
+    document.getElementById('expense-title-input').value = 'Dinner Updated';
+    document.getElementById('expense-amount-input').value = '30';
+    document.querySelector('.add-expense').click();
 
-    test("getPositiveAmount should preserve valid input", () => {
-        const input = document.createElement("input");
-        input.value = "50";
+    const entries = JSON.parse(localStorage.getItem('entry_list'));
+    expect(entries).toEqual([
+      { type: 'expense', title: 'Dinner Updated', amount: 30 },
+    ]);
+    expect(document.querySelector('#expense .list').children.length).toBe(1);
+    expect(document.querySelector('#expense .list').textContent).toContain('Dinner Updated');
+  });
 
-        getPositiveAmount(input);
+  test('editing an existing income should replace it instead of adding another one', () => {
+    loadBudgetModule();
 
-        expect(input.value).toBe("50");
-    });
+    document.getElementById('income-title-input').value = 'Old Salary';
+    document.getElementById('income-amount-input').value = '1000';
+    document.querySelector('.add-income').click();
+
+    document.querySelector('#income .list li #edit').click();
+    document.getElementById('income-title-input').value = 'New Salary';
+    document.getElementById('income-amount-input').value = '1200';
+    document.querySelector('.add-income').click();
+
+    const entries = JSON.parse(localStorage.getItem('entry_list'));
+    expect(entries).toEqual([
+      { type: 'income', title: 'New Salary', amount: 1200 },
+    ]);
+    expect(document.querySelector('#income .list').children.length).toBe(1);
+    expect(document.querySelector('#income .list').textContent).toContain('New Salary');
+  });
+
+  test('delete button should remove entry from UI and localStorage', () => {
+    loadBudgetModule();
+
+    document.getElementById('income-title-input').value = 'Gift';
+    document.getElementById('income-amount-input').value = '80';
+    document.querySelector('.add-income').click();
+
+    document.querySelector('#income .list li #delete').click();
+
+    expect(document.querySelector('#income .list').children.length).toBe(0);
+    expect(JSON.parse(localStorage.getItem('entry_list'))).toEqual([]);
+  });
+
+  test('deleteOrEdit should do nothing when clicked target is not edit or delete', () => {
+    const budget = loadBudgetModule();
+
+    const event = {
+      target: document.createElement('span'),
+    };
+
+    expect(() => budget.deleteOrEdit(event)).not.toThrow();
+  });
+
+  test('editEntry should safely return when entry does not exist', () => {
+    const budget = loadBudgetModule();
+
+    const fakeEntry = document.createElement('li');
+    fakeEntry.id = '999';
+
+    expect(() => budget.editEntry(fakeEntry)).not.toThrow();
+  });
+
+  test('deleteEntry should clear editIndex when deleting the entry currently being edited', () => {
+    const budget = loadBudgetModule();
+
+    document.getElementById('income-title-input').value = 'Temp';
+    document.getElementById('income-amount-input').value = '10';
+    document.querySelector('.add-income').click();
+
+    const entry = document.querySelector('#income .list li');
+    budget.editEntry(entry);
+    budget.deleteEntry(entry);
+
+    expect(JSON.parse(localStorage.getItem('entry_list'))).toEqual([]);
+  });
+
+  test('showEntry should create list item with edit and delete buttons', () => {
+    const budget = loadBudgetModule();
+    const list = document.createElement('ul');
+
+    budget.showEntry(list, 'income', 'Manual', 123, 0);
+
+    expect(list.children.length).toBe(1);
+    expect(list.firstChild.id).toBe('0');
+    expect(list.firstChild.className).toBe('income');
+    expect(list.textContent).toContain('Manual : $123');
+    expect(list.querySelector('#edit')).not.toBeNull();
+    expect(list.querySelector('#delete')).not.toBeNull();
+  });
+
+  test('CNY input should be stored as USD base amount and rendered as CNY', () => {
+    const budget = loadBudgetModule();
+    budget.applyCurrency('CNY');
+
+    document.getElementById('income-title-input').value = '人民币收入';
+    document.getElementById('income-amount-input').value = '70';
+    document.querySelector('.add-income').click();
+
+    expect(JSON.parse(localStorage.getItem('entry_list'))).toEqual([
+      { type: 'income', title: '人民币收入', amount: 10 },
+    ]);
+    expect(document.querySelector('#income .list').textContent).toContain('人民币收入 : ¥70');
+  });
 });
 
-// ===== Simulated User Interactions (Replaces direct function calls) =====
-describe('User Interactions (Simulated Clicks)', () => {
-    
-    // Test early return when title is empty (Branch coverage)
-    test('Should return early if income title is empty', () => {
-        const titleInput = document.getElementById("income-title-input");
-        const addBtn = document.querySelector(".add-income");
-        
-        titleInput.value = ""; // Empty title
-        const initialHTML = document.querySelector("#income .list").innerHTML;
-        addBtn.click(); 
+describe('localStorage handling', () => {
+  test('loadEntries should return empty array when no saved data exists', () => {
+    const budget = loadBudgetModule();
 
-        // List should remain unchanged
-        expect(document.querySelector("#income .list").innerHTML).toBe(initialHTML);
+    localStorage.removeItem('entry_list');
+
+    expect(budget.loadEntries()).toEqual([]);
+  });
+
+  test('loadEntries should load valid saved entries', () => {
+    const saved = [{ type: 'income', title: 'Saved', amount: 100 }];
+    localStorage.setItem('entry_list', JSON.stringify(saved));
+
+    const budget = loadBudgetModule();
+
+    expect(budget.loadEntries()).toEqual(saved);
+  });
+
+  test('loadEntries should remove corrupted JSON and alert user', () => {
+    localStorage.setItem('entry_list', '{bad json');
+
+    const budget = loadBudgetModule();
+
+    expect(budget.loadEntries()).toEqual([]);
+    expect(localStorage.getItem('entry_list')).toBe('[]');
+    expect(global.alert).toHaveBeenCalled();
+  });
+
+  test('loadEntries should reject non-array saved data', () => {
+    localStorage.setItem('entry_list', JSON.stringify({ invalid: true }));
+
+    const budget = loadBudgetModule();
+
+    expect(budget.loadEntries()).toEqual([]);
+    expect(localStorage.getItem('entry_list')).toBe('[]');
+  });
+
+  test('saveEntries should catch localStorage write errors', () => {
+    const budget = loadBudgetModule();
+    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('Storage full');
     });
 
-    // Test early return when amount is invalid (Branch coverage)
-    test('Should return early if income amount is invalid', () => {
-        const titleInput = document.getElementById("income-title-input");
-        const amountInput = document.getElementById("income-amount-input");
-        const addBtn = document.querySelector(".add-income");
-        
-        titleInput.value = "Bonus"; 
-        amountInput.value = "-100"; // Negative
-        const initialHTML = document.querySelector("#income .list").innerHTML;
-        addBtn.click(); 
+    budget.saveEntries();
 
-        expect(document.querySelector("#income .list").innerHTML).toBe(initialHTML);
-    });
+    expect(global.console.error).toHaveBeenCalled();
+    expect(global.alert).toHaveBeenCalledWith('Unable to save budget data.');
 
-    test('User click on add income button should process data and update UI', () => {
-        // 1. Obtain the input box and the add button
-        const titleInput = document.getElementById("income-title-input");
-        const amountInput = document.getElementById("income-amount-input");
-        const addBtn = document.querySelector(".add-income");
-
-        // 2. Simulated user input
-        titleInput.value = "Bonus";
-        amountInput.value = "1000";
-        
-        // 3. Simulate a user clicking the button! (This will automatically trigger the listener code in budget.js)
-        addBtn.click(); 
-
-        // 4. Verify whether the income list updated
-        const incomeList = document.querySelector("#income .list");
-        expect(incomeList.innerHTML).toContain("Bonus");
-        expect(incomeList.innerHTML).toContain("1000");
-    });
-
-    // Test early return when expense title is empty
-    test('Should return early if expense title is empty', () => {
-        const titleInput = document.getElementById("expense-title-input");
-        const addBtn = document.querySelector(".add-expense");
-        
-        titleInput.value = ""; // Empty title
-        const initialHTML = document.querySelector("#expense .list").innerHTML;
-        addBtn.click(); 
-
-        expect(document.querySelector("#expense .list").innerHTML).toBe(initialHTML);
-    });
-
-    // Test early return when amount is invalid
-    test('Should return early if expense amount is invalid', () => {
-        const titleInput = document.getElementById("expense-title-input");
-        const amountInput = document.getElementById("expense-amount-input");
-        const addBtn = document.querySelector(".add-expense");
-        
-        titleInput.value = "Lunch"; 
-        amountInput.value = "0"; // Zero
-        const initialHTML = document.querySelector("#expense .list").innerHTML;
-        addBtn.click(); 
-
-        expect(document.querySelector("#expense .list").innerHTML).toBe(initialHTML);
-    });
-
-    test('User click on add expense button should process data and update UI', () => {
-        // 1. Obtain input box and add button
-        const titleInput = document.getElementById("expense-title-input");
-        const amountInput = document.getElementById("expense-amount-input");
-        const addBtn = document.querySelector(".add-expense");
-
-        // 2. Simulated user input
-        titleInput.value = "Lunch";
-        amountInput.value = "50";
-        
-        // 3. Simulate a user clicking the button
-        addBtn.click(); 
-
-        // 4. Check whether this expenditure has been successfully rendered
-        const expenseList = document.querySelector("#expense .list");
-        expect(expenseList.innerHTML).toContain("Lunch");
-        expect(expenseList.innerHTML).toContain("50");
-    });
-    
-    test('Tab switching should work correctly', () => {
-        const incomeTabBtn = document.querySelector(".second-tab");
-        const expenseTabBtn = document.querySelector(".first-tab");
-        const allTabBtn = document.querySelector(".third-tab");
-        
-        const incomePanel = document.querySelector("#income");
-        const expensePanel = document.querySelector("#expense");
-        const allPanel = document.querySelector("#all");
-        
-        // Click the "Income" tab button at the top.
-        incomeTabBtn.click();
-        expect(incomePanel.classList.contains("hide")).toBe(false);
-
-        // Click the "Expense" tab button
-        expenseTabBtn.click();
-        expect(expensePanel.classList.contains("hide")).toBe(false);
-
-        // Click the "All" tab button
-        allTabBtn.click();
-        expect(allPanel.classList.contains("hide")).toBe(false);
-    });
+    jest.restoreAllMocks();
+  });
 });
 
-// ===== Data Modification Tests (Edit & Delete) =====
-describe('Data Modification (Edit & Delete)', () => {
-    test('editEntry should populate income inputs properly and delete entry', () => {
-        // Mock an entry object inside the array by triggering an add first
-        document.getElementById("income-title-input").value = "Salary Test";
-        document.getElementById("income-amount-input").value = "2000";
-        document.querySelector(".add-income").click();
-        
-        // Dynamically get the ID from the newly generated DOM element instead of hardcoding
-        const incomeList = document.querySelector("#income .list");
-        const entryId = incomeList.firstChild.id;
-        
-        const mockEditEvent = { target: { id: "edit", parentNode: { id: entryId } } };
-        
-        deleteOrEdit(mockEditEvent);
+describe('cookie banner', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
 
-        expect(document.getElementById("income-title-input").value).toBe("Salary Test");
-        expect(document.getElementById("income-amount-input").value).toBe("2000");
-    });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
 
-    test('editEntry should populate expense inputs properly', () => {
-        // Trigger an add expense first to ensure we have a clean target to test
-        document.getElementById("expense-title-input").value = "Dinner";
-        document.getElementById("expense-amount-input").value = "25";
-        document.querySelector(".add-expense").click();
+  test('cookie banner should appear after delay if cookies were not accepted', () => {
+    loadBudgetModule();
+    const banner = document.getElementById('cookie-banner');
 
-        // Dynamically get the ID from the expense list
-        const expenseList = document.querySelector("#expense .list");
-        const entryId = expenseList.firstChild.id;
-        
-        const mockEditEvent = { target: { id: "edit", parentNode: { id: entryId } } };
-        
-        deleteOrEdit(mockEditEvent);
+    expect(banner.classList.contains('hide')).toBe(true);
 
-        expect(document.getElementById("expense-title-input").value).toBe("Dinner");
-        expect(document.getElementById("expense-amount-input").value).toBe("25");
-    });
+    jest.advanceTimersByTime(1000);
 
-    test('deleteOrEdit should route to deleteEntry when delete button is clicked', () => {
-        // Create a dummy expense to safely delete
-        document.getElementById("expense-title-input").value = "Trash";
-        document.getElementById("expense-amount-input").value = "5";
-        document.querySelector(".add-expense").click();
+    expect(banner.classList.contains('hide')).toBe(false);
+  });
 
-        const expenseList = document.querySelector("#expense .list");
-        const entryId = expenseList.firstChild.id;
+  test('clicking accept should save acceptance and hide the banner', () => {
+    loadBudgetModule();
+    const banner = document.getElementById('cookie-banner');
 
-        const mockDeleteEvent = { target: { id: "delete", parentNode: { id: entryId } } };
-        // Executing delete should successfully run without throwing errors
-        expect(() => {
-            deleteOrEdit(mockDeleteEvent);
-        }).not.toThrow();
-    });
+    document.getElementById('accept-cookies').click();
 
-    test('deleteOrEdit should do nothing if clicked element is not edit or delete', () => {
-        const mockEvent = { target: { id: "random", parentNode: { id: 0 } } };
-        // Should not throw errors and quietly return
-        expect(() => deleteOrEdit(mockEvent)).not.toThrow();
-    });
-});
+    expect(localStorage.getItem('cookiesAccepted')).toBe('true');
+    expect(banner.classList.contains('hide')).toBe(true);
+  });
 
-// ===== Error handling tests =====
+  test('cookie banner should stay hidden when already accepted', () => {
+    localStorage.setItem('cookiesAccepted', 'true');
 
-describe('localStorage error handling', () => {
-    beforeEach(() => {
-        localStorage.clear();
-        jest.clearAllMocks();
-    });
+    loadBudgetModule();
+    const banner = document.getElementById('cookie-banner');
 
-    test('loadEntries should return empty array when no saved data exists', () => {
-        expect(loadEntries()).toEqual([]);
-    });
+    jest.advanceTimersByTime(1500);
 
-    test('loadEntries should return parsed entries for valid localStorage data', () => {
-        const mockEntries = [
-            { type: 'income', title: 'Salary', amount: 1000 }
-        ];
+    expect(banner.classList.contains('hide')).toBe(true);
+  });
 
-        localStorage.setItem('entry_list', JSON.stringify(mockEntries));
+  test('should not throw when cookie banner elements are missing', () => {
+    jest.resetModules();
 
-        expect(loadEntries()).toEqual(mockEntries);
-    });
+    document.body.innerHTML = html.toString();
+    global.updateChart = jest.fn();
+    global.alert = jest.fn();
+    global.console.error = jest.fn();
 
-    test('loadEntries should reset corrupted localStorage data', () => {
-        localStorage.setItem('entry_list', '{ broken json');
+    expect(() => {
+      require('./budget.js');
+    }).not.toThrow();
+  });
 
-        expect(loadEntries()).toEqual([]);
-        expect(localStorage.getItem('entry_list')).toBeNull();
-        expect(global.alert).toHaveBeenCalled();
-    });
+  test('should not throw when only cookie banner exists but accept button is missing', () => {
+    jest.resetModules();
 
-    test('loadEntries should reject non-array localStorage data', () => {
-        localStorage.setItem('entry_list', JSON.stringify({ invalid: true }));
+    document.body.innerHTML = html.toString() + `
+      <div id="cookie-banner" class="hide">Cookie Banner</div>
+    `;
 
-        expect(loadEntries()).toEqual([]);
-        expect(localStorage.getItem('entry_list')).toBeNull();
-    });
+    global.updateChart = jest.fn();
+    global.alert = jest.fn();
+    global.console.error = jest.fn();
 
-    test('saveEntries should catch error and alert on save failure', () => {
-        // Intentionally break localStorage.setItem to force an error
-        jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-            throw new Error("Storage full");
-        });
+    expect(() => {
+      require('./budget.js');
+    }).not.toThrow();
+  });
 
-        saveEntries();
+  test('should not throw when only accept button exists but cookie banner is missing', () => {
+    jest.resetModules();
 
-        expect(console.error).toHaveBeenCalled();
-        expect(global.alert).toHaveBeenCalledWith("Unable to save budget data.");
-        
-        jest.restoreAllMocks(); // Cleanup mock
-    });
-});
+    document.body.innerHTML = html.toString() + `
+      <button id="accept-cookies">Accept</button>
+    `;
 
-// ===== Cookie Banner Logic Tests =====
-describe('Cookie Banner Logic', () => {
-    beforeEach(() => {
-        jest.useFakeTimers(); // Enable fake timers to test setTimeout
-        jest.resetModules(); // Reset to allow re-evaluating the budget.js
-        document.body.innerHTML = html.toString() + cookieHtml;
-        localStorage.clear();
-    });
+    global.updateChart = jest.fn();
+    global.alert = jest.fn();
+    global.console.error = jest.fn();
 
-    afterEach(() => {
-        jest.useRealTimers();
-    });
-
-    test('Cookie banner should display after delay if not yet accepted', () => {
-        require('./budget.js'); // Re-require to run the initialization logic
-        const banner = document.getElementById('cookie-banner');
-        
-        expect(banner.classList.contains('hide')).toBe(true);
-        
-        // Fast-forward time to bypass the setTimeout delay
-        jest.advanceTimersByTime(1500); 
-        
-        expect(banner.classList.contains('hide')).toBe(false);
-    });
-
-    test('Should write to LocalStorage and hide banner after clicking accept', () => {
-        require('./budget.js');
-        const acceptBtn = document.getElementById('accept-cookies');
-        const banner = document.getElementById('cookie-banner');
-        
-        acceptBtn.click(); // Simulate user clicking "Got it"
-        
-        expect(localStorage.getItem('cookiesAccepted')).toBe('true');
-        expect(banner.classList.contains('hide')).toBe(true);
-    });
+    expect(() => {
+      require('./budget.js');
+    }).not.toThrow();
+  });
 });
