@@ -3,7 +3,7 @@ const path = require('path');
 
 // Load HTML into Jest's virtual DOM environment
 const html = fs.readFileSync(path.resolve(__dirname, './index.html'), 'utf8');
-document.documentElement.innerHTML = html.toString();
+document.body.innerHTML = html.toString();
 
 // Mock external dependencies used in budget.js
 // updateChart is not part of the logic under test
