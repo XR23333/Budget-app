@@ -331,6 +331,8 @@ allList.addEventListener("click", deleteOrEdit);
 // CORE FUNCTIONS
 // =====================
 function deleteOrEdit(event) {
+  if (!event.target || typeof event.target.closest !== "function") return;
+
   const targetBtn = event.target.closest("#edit, #delete");
 
   if (!targetBtn) return;
