@@ -1,9 +1,10 @@
 @font-face {
   font-family: "Gilroy";
   src: url("font/Gilroy-Regular.woff") format("woff");
-  font-weight: bold;
+  font-weight: normal;
   font-style: normal;
 }
+
 @font-face {
   font-family: "Gilroy Bold";
   src: url("font/Gilroy-Bold.woff") format("woff");
@@ -11,551 +12,1108 @@
   font-style: normal;
 }
 
-body {
-  background-color: #222;
-  font-family: "Gilroy";
-}
+/* ==================== GLOBAL ==================== */
 
 * {
-  font-family: "Gilroy";
+  box-sizing: border-box;
+  font-family: "Gilroy", sans-serif;
   list-style: none;
   text-decoration: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  transition: background-color 0.25s ease, color 0.25s ease,
+    transform 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #222;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  overflow-x: hidden;
 }
 
 /* REMOVE SPINNERS FROM NUMBER INPUT */
-/* Chrome, Safari, Edge, Opera */
+
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-/* Firefox */
 input[type="number"] {
   -moz-appearance: textfield;
 }
 
+/* ==================== MAIN CONTAINER ==================== */
+
 .budget-container {
-  position: absolute;
-  width: 360px;
-  height: 100vh;
-  top: 50%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-50%);
-  background-color: #2a0355;
+  width: 100vw;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #2a0355 0%, #2a0355 42%, #ffffff 42%);
+  overflow: hidden;
+  position: relative;
 }
 
+/* ==================== HEADER ==================== */
+
 .budget-container .app-title {
-  margin-top: 20px;
-  margin-left: 20px;
+  margin: 22px 24px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .budget-container .app-title a {
   color: #fff;
-}
-.budget-container .app-title a b {
-  font-family: "Gilroy Bold";
+  font-size: 1rem;
 }
 
+.budget-container .app-title a b {
+  font-family: "Gilroy Bold", sans-serif;
+}
+
+/* ==================== LANGUAGE SWITCHER ==================== */
+
+.language-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lang-btn {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: "Gilroy Bold", sans-serif;
+  font-size: 0.75rem;
+}
+
+.lang-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.lang-btn.active-lang {
+  background: #f0624d;
+  border-color: #f0624d;
+  box-shadow: 0 6px 14px rgba(240, 98, 77, 0.35);
+}
+
+/* ==================== BUDGET HEADER ==================== */
+
 .budget-header {
+  padding: 0 24px;
 }
 
 .budget-header .balance {
-  margin-top: 25px;
-  margin-left: 20px;
+  margin-top: 32px;
 }
 
 .budget-header .balance .title {
   color: #fff;
-  font-size: 1em;
-  font-family: "Gilroy Bold";
+  font-size: 1rem;
+  font-family: "Gilroy Bold", sans-serif;
 }
 
 .budget-header .balance .value {
   color: #fff;
-  font-size: 2em;
+  font-size: clamp(2rem, 8vw, 2.8rem);
   margin-top: 10px;
-  font-family: "Gilroy Bold";
+  font-family: "Gilroy Bold", sans-serif;
 }
 
 .budget-header .account {
-  display: block;
-  width: 310px;
-  margin: 25px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 30px auto 0;
   line-height: 1.7em;
   text-align: center;
 }
 
 .budget-header .account .income,
-.chart,
-.outcome {
-  height: 50px;
-  display: inline-block;
-  width: 100px;
-  vertical-align: middle;
+.budget-header .account .outcome,
+.chart {
+  width: 30%;
+  max-width: 120px;
+  min-height: 54px;
 }
 
-.budget-header .account .income .title {
-  color: #fff;
-  opacity: 0.5;
-}
-.budget-header .account .income .income-total {
-  color: #fff;
-  font-family: "Gilroy Bold";
-}
-
+.budget-header .account .income .title,
 .budget-header .account .outcome .title {
   color: #fff;
-  opacity: 0.5;
-}
-.budget-header .account .outcome .outcome-total {
-  color: #f0624d;
-  font-family: "Gilroy Bold";
+  opacity: 0.55;
+  font-family: "Gilroy Bold", sans-serif;
 }
 
-/**************   DASHBOARD    ***********/
+.budget-header .account .income .income-total {
+  color: #fff;
+  font-family: "Gilroy Bold", sans-serif;
+}
+
+.budget-header .account .outcome .outcome-total {
+  color: #f0624d;
+  font-family: "Gilroy Bold", sans-serif;
+}
+
+/* ==================== DASHBOARD ==================== */
+
 .budget-dashboard {
   display: block;
-  width: 360px;
-  min-height: 470px;
+  width: 100%;
+  min-height: calc(100vh - 255px);
   background-color: #fff;
-  margin-top: 35px;
-  border-radius: 30px 30px 0 0;
+  margin-top: 36px;
+  border-radius: 34px 34px 0 0;
+  padding: 30px 0 24px;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
 .budget-dashboard .dash-title {
-  display: inline-block;
+  display: block;
   color: #1a0034;
-  font-size: 1.7em;
-  margin-left: 20px;
-  margin-top: 30px;
-  font-family: "Gilroy Bold";
+  font-size: clamp(1.55rem, 5vw, 1.9rem);
+  margin-left: 24px;
+  font-family: "Gilroy Bold", sans-serif;
 }
 
+/* ==================== TABS ==================== */
+
 .toggle {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 18px;
   margin-top: 30px;
-  margin-left: 20px;
+  margin-left: 24px;
 }
 
 .toggle .first-tab,
-.second-tab,
-.third-tab {
-  display: inline-block;
+.toggle .second-tab,
+.toggle .third-tab {
   cursor: pointer;
-  font-size: 1.1em;
+  font-size: 1.05rem;
   color: #1a0034;
-  font-family: "Gilroy Bold";
-  opacity: 0.4;
+  font-family: "Gilroy Bold", sans-serif;
+  opacity: 0.35;
+  position: relative;
+  padding-bottom: 7px;
 }
 
-.toggle .second-tab,
-.third-tab {
-  margin-left: 10px;
+.toggle .first-tab:hover,
+.toggle .second-tab:hover,
+.toggle .third-tab:hover {
+  opacity: 0.75;
 }
 
 .focus {
   opacity: 1 !important;
 }
 
+.toggle .focus::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: #2a0355;
+}
+
 .hide {
   display: none;
 }
 
+/* ==================== LIST AREAS ==================== */
+
+.budget-dashboard #all,
+.budget-dashboard #income,
+.budget-dashboard #expense {
+  width: 100%;
+  height: calc(100% - 110px);
+  position: relative;
+}
+
+.budget-dashboard #all ul,
+.budget-dashboard #income ul,
+.budget-dashboard #expense ul {
+  width: 100%;
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0 20px 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.budget-dashboard #all ul {
+  height: calc(100% - 22px);
+  min-height: 260px;
+}
+
+.budget-dashboard #income ul,
+.budget-dashboard #expense ul {
+  height: calc(100% - 105px);
+  min-height: 180px;
+}
+
+/* Scrollbar */
+
+.budget-dashboard ul::-webkit-scrollbar {
+  width: 6px;
+}
+
+.budget-dashboard ul::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.budget-dashboard ul::-webkit-scrollbar-thumb {
+  background: rgba(42, 3, 85, 0.18);
+  border-radius: 999px;
+}
+
+/* ==================== LIST ITEMS ==================== */
+
+.budget-dashboard ul.list li {
+  position: relative;
+  width: 100%;
+  min-height: 52px;
+  margin-bottom: 12px;
+  padding: 12px 44px 12px 14px;
+  border-radius: 16px;
+  background: #f8f6fb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.98rem;
+}
+
+.budget-dashboard ul.list li:hover {
+  background: #f1ecf7;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(42, 3, 85, 0.08);
+}
+
+.budget-dashboard ul.list li.income {
+  border-left: 4px solid #2a0355;
+  color: #1a0034;
+}
+
+.budget-dashboard ul.list li.expense {
+  border-left: 4px solid #f0624d;
+  color: #f0624d;
+}
+
+.budget-dashboard ul.list li .entry {
+  width: 100%;
+  min-height: auto;
+  height: auto;
+  padding-left: 0;
+  margin-bottom: 0;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  font-family: "Gilroy Bold", sans-serif;
+  line-height: 1.4;
+}
+
+.budget-dashboard ul.list li * {
+  vertical-align: middle;
+}
+
+/* All 页面显示编辑按钮，不显示删除按钮 */
+
+.budget-dashboard #all ul.list li #edit {
+  visibility: visible;
+}
+
+.budget-dashboard #all ul.list li #delete {
+  visibility: hidden;
+}
+
+/* Edit and delete icons */
+
+.budget-dashboard ul.list li #edit,
+.budget-dashboard ul.list li #delete {
+  position: absolute;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  border-radius: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 15px 15px;
+}
+
+.budget-dashboard ul.list li #edit {
+  right: 52px;
+  background-color: #eee8f6;
+  background-image: url("icon/edit.png");
+}
+
+.budget-dashboard ul.list li #delete {
+  right: 14px;
+  background-color: #fff0ed;
+  background-image: url("icon/trash.png");
+}
+
+.budget-dashboard ul.list li #edit:hover,
+.budget-dashboard ul.list li #delete:hover {
+  transform: translateY(-50%) scale(1.08);
+  filter: brightness(1.03);
+}
+
+/* ==================== INPUT AREAS ==================== */
+
+.budget-dashboard #expense .input,
+.budget-dashboard #income .input {
+  width: calc(100% - 40px);
+  margin: 12px 20px 0;
+  padding: 12px;
+  border-radius: 18px;
+  background: #f8f6fb;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .budget-dashboard input {
-  /* MAKE INPUT SELECTABLE */
   -webkit-user-select: auto;
   -moz-user-select: auto;
   -ms-user-select: auto;
   user-select: auto;
-}
-
-/* ////////// ALL ///////////// */
-.budget-dashboard #all {
-  width: 360px;
-  height: auto;
-  position: relative;
-}
-.budget-dashboard #all ul {
-  width: 360px;
-  height: 270px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  margin-top: 20px;
-  overflow-x: auto;
-}
-
-.budget-dashboard #all ul.list li {
-  position: relative;
-  font-size: 1em;
-}
-
-.budget-dashboard #all ul.list li * {
-  display: inline-block;
-  height: 30px;
-  vertical-align: middle;
-}
-
-.budget-dashboard #all ul.list li .entry {
-  width: 250px;
-  height: auto;
-  padding-left: 20px;
-  margin-bottom: 10px;
-  word-wrap: break-word;
-  font-family: "Gilroy Bold";
-}
-
-.budget-dashboard #all ul.list li #edit {
-  visibility: hidden;
-}
-
-.budget-dashboard #all ul.list li #delete {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  right: 20px;
-  cursor: pointer;
-  background-image: url("icon/trash.png");
-  background-size: 20px 20px;
-  background-repeat: no-repeat;
-}
-
-.budget-dashboard #all ul.list li.income {
-}
-.budget-dashboard #all ul.list li.expense {
-  color: #f0624d;
-}
-
-/* //////// EXPENSE ////////// */
-.budget-dashboard #expense {
-  width: 360px;
-  min-height: 339px;
-  position: relative;
-}
-
-.budget-dashboard #expense .input {
-  position: absolute;
-  display: block;
-  width: 360px;
-  bottom: 0;
-  border-top: 1px solid #ccc;
-}
-
-.budget-dashboard #expense .input * {
-  display: inline-block;
-  vertical-align: middle;
-}
-
-.budget-dashboard #expense .input input#expense-title-input {
-  height: 40px;
-  width: 150px;
-  padding-left: 10px;
-  font-size: 1.2em;
-  font-family: "Gilroy";
-  margin: 5px;
-  margin-left: 10px;
-  border-radius: 10px 0 0 10px;
   border: none;
+  outline: none;
+  background: #fff;
+  color: #1a0034;
+  font-size: 0.95rem;
+  min-width: 0;
 }
 
-.budget-dashboard #expense .input input#expense-amount-input {
-  height: 40px;
-  width: 110px;
-  padding-left: 10px;
-  font-size: 1.2em;
-  font-family: "Gilroy";
-  margin: 5px;
-  margin-left: -10px;
-  border-radius: 0 10px 10px 0;
-  border: none;
-}
-
-.budget-dashboard #expense .input .add-expense img {
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-}
-
-.budget-dashboard #expense ul {
-  width: 360px;
-  min-height: 285px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  margin-top: 20px;
-  overflow-x: auto;
-}
-
-.budget-dashboard #expense ul.list li {
-  position: relative;
-  font-size: 1em;
-}
-
-.budget-dashboard #expense ul.list li * {
-  display: inline-block;
-  height: 30px;
-  vertical-align: middle;
-}
-
-.budget-dashboard #expense ul.list li .entry {
-  width: 250px;
-  height: auto;
-  padding-left: 20px;
-  margin-bottom: 10px;
-  word-wrap: break-word;
-  font-family: "Gilroy Bold";
-  color: #f0624d;
-}
-
-.budget-dashboard #expense ul.list li #edit {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  right: 50px;
-  cursor: pointer;
-  background-image: url("icon/edit.png");
-  background-size: 20px 20px;
-  background-repeat: no-repeat;
-}
-
-.budget-dashboard #expense ul.list li #delete {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  right: 20px;
-  cursor: pointer;
-  background-image: url("icon/trash.png");
-  background-size: 20px 20px;
-  background-repeat: no-repeat;
-}
-
-/* /////// INCOME //////// */
-.budget-dashboard #income {
-  width: 360px;
-  min-height: 339px;
-  position: relative;
-}
-
-.budget-dashboard #income .input {
-  position: absolute;
-  display: block;
-  width: 360px;
-  bottom: 0;
-  border-top: 1px solid #ccc;
-}
-
-.budget-dashboard #income .input * {
-  display: inline-block;
-  vertical-align: middle;
-}
-
+.budget-dashboard #expense .input input#expense-title-input,
 .budget-dashboard #income .input input#income-title-input {
-  height: 40px;
-  width: 150px;
-  padding-left: 10px;
-  font-size: 1.2em;
-  font-family: "Gilroy";
-  margin: 5px;
-  margin-left: 10px;
-  border-radius: 10px 0 0 10px;
-  border: none;
+  flex: 1.2;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 12px;
 }
 
+.budget-dashboard #expense .input input#expense-amount-input,
 .budget-dashboard #income .input input#income-amount-input {
-  height: 40px;
-  width: 110px;
-  padding-left: 10px;
-  font-size: 1.2em;
-  font-family: "Gilroy";
-  margin: 5px;
-  margin-left: -10px;
-  border-radius: 0 10px 10px 0;
-  border: none;
-}
-
-.budget-dashboard #income .input .add-income img {
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-}
-
-.budget-dashboard #income ul {
-  width: 360px;
-  height: auto;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  margin-top: 20px;
-  overflow-x: auto;
-}
-
-.budget-dashboard #income ul.list li {
-  position: relative;
-  font-size: 1em;
-}
-
-.budget-dashboard #income ul.list li * {
-  display: inline-block;
-  height: 30px;
-  vertical-align: middle;
-}
-
-.budget-dashboard #income ul.list li .entry {
-  width: 250px;
-  height: auto;
-  padding-left: 20px;
-  margin-bottom: 10px;
-  word-wrap: break-word;
-  font-family: "Gilroy Bold";
-}
-
-.budget-dashboard #income ul.list li #edit {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  right: 50px;
-  cursor: pointer;
-  background-image: url("icon/edit.png");
-  background-size: 20px 20px;
-  background-repeat: no-repeat;
-}
-
-.budget-dashboard #income ul.list li #delete {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  right: 20px;
-  cursor: pointer;
-  background-image: url("icon/trash.png");
-  background-size: 20px 20px;
-  background-repeat: no-repeat;
-}
-
-/* ============================================================
-   UI/UX REFINEMENT - ADDED BY QIANRUI_WANG (ID: 2251995)
-   ============================================================ */
-
-/* Global Transition for smoother feel */
-* {
-  transition: all 0.25s ease-in-out;
-}
-
-/* 1. Container Enhancement: Add depth with a modern shadow */
-.budget-container {
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-/* 2. Dashboard Upgrade: Refine top corners and elevation */
-.budget-dashboard {
-  box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
-  border-radius: 35px 35px 0 0 !important;
-}
-
-/* 3. Input Fields: Modern focus states and improved padding */
-.budget-dashboard input {
-  background-color: #f8f9fa !important;
-  border: 1px solid #eee !important;
-  padding: 10px 15px !important;
-  border-radius: 10px !important;
+  flex: 0.8;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 12px;
 }
 
 .budget-dashboard input:focus {
-  outline: none !important;
-  border-color: #2a0355 !important;
-  background-color: #fff !important;
-  box-shadow: 0 0 10px rgba(42,3,85,0.1);
+  box-shadow: 0 0 0 2px rgba(42, 3, 85, 0.15);
 }
 
-/* 4. List Interactions: Hover feedback and micro-animations */
-.budget-dashboard ul.list li {
-  padding: 8px 0;
-  border-radius: 8px;
-}
-
-.budget-dashboard ul.list li:hover {
-  background-color: rgba(0,0,0,0.02);
-  padding-left: 5px; /* Subtle movement */
-}
-
-/* 5. Icons: Feedback when hovering over action buttons */
-#edit:hover, #delete:hover {
-  transform: scale(1.2);
-  filter: brightness(1.2);
-}
-
-/* 6. Tabs: Add a clean indicator for active view */
-.toggle .focus {
-  color: #2a0355 !important;
-  opacity: 1 !important;
-  position: relative;
-}
-
-.toggle .focus::after {
-  content: "";
-  position: absolute;
-  bottom: -5px;
-  left: 0;
-  width: 100%;
-  height: 2px;
+.add-expense,
+.add-income {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 50%;
   background: #2a0355;
-}
-/* ==================== COOKIE BANNER UI ==================== */
-.cookie-banner {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-    max-width: 400px;
-    background-color: #2a0355;
-    color: #fff;
-    padding: 15px 20px;
-    border-radius: 15px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 9999;
-    transition: all 0.5s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
-/* 覆盖全局的 hide 行为，专门为 banner 做滑出动画 */
+.add-expense:hover,
+.add-income:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 18px rgba(42, 3, 85, 0.22);
+}
+
+.budget-dashboard #expense .input .add-expense img,
+.budget-dashboard #income .input .add-income img {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+/* ==================== COOKIE BANNER ==================== */
+
+.cookie-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(90vw, 520px);
+  background-color: #2a0355;
+  color: #fff;
+  padding: 15px 18px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 9999;
+  transition: bottom 0.5s ease, opacity 0.5s ease;
+}
+
 .cookie-banner.hide {
-    bottom: -100px !important; /* 隐藏时退到屏幕外面 */
-    opacity: 0 !important;
-    pointer-events: none;
-    display: flex; /* 保持 flex 布局以配合动画 */
+  bottom: -120px !important;
+  opacity: 0 !important;
+  pointer-events: none;
+  display: flex;
 }
 
 .cookie-content p {
-    margin: 0;
-    font-size: 0.85em;
-    line-height: 1.4;
-    color: rgba(255,255,255,0.8);
-    font-family: "Gilroy", sans-serif;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: "Gilroy", sans-serif;
 }
 
 #accept-cookies {
-    background-color: #f0624d;
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    font-family: "Gilroy Bold", sans-serif;
-    cursor: pointer;
-    margin-left: 15px;
-    transition: transform 0.2s, background-color 0.2s;
-    white-space: nowrap;
+  background-color: #f0624d;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-family: "Gilroy Bold", sans-serif;
+  cursor: pointer;
+  margin-left: 14px;
+  white-space: nowrap;
 }
 
 #accept-cookies:hover {
-    transform: scale(1.05);
-    background-color: #ff7661;
+  transform: scale(1.05);
+  background-color: #ff7661;
+}
+
+/* ==================== PAGE LOAD ANIMATIONS ==================== */
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes itemPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.budget-container .app-title,
+.budget-header .balance,
+.budget-header .account,
+.budget-dashboard {
+  opacity: 0;
+  animation: fadeSlideUp 0.55s ease forwards;
+}
+
+.budget-container .app-title {
+  animation-name: fadeSlideDown;
+  animation-delay: 0.05s;
+}
+
+.budget-header .balance {
+  animation-delay: 0.12s;
+}
+
+.budget-header .account {
+  animation-delay: 0.2s;
+}
+
+.budget-dashboard {
+  animation-delay: 0.28s;
+}
+
+.budget-dashboard ul.list li {
+  animation: itemPopIn 0.28s ease forwards;
+}
+
+/* ==================== SMALL PHONES ==================== */
+
+@media (max-width: 380px) {
+  .budget-container .app-title {
+    margin: 18px 18px 0;
+  }
+
+  .budget-header {
+    padding: 0 18px;
+  }
+
+  .budget-header .balance {
+    margin-top: 24px;
+  }
+
+  .budget-header .account {
+    margin-top: 24px;
+  }
+
+  .budget-dashboard {
+    min-height: calc(100vh - 245px);
+  }
+
+  .budget-dashboard .dash-title {
+    margin-left: 18px;
+  }
+
+  .toggle {
+    margin-left: 18px;
+    gap: 14px;
+  }
+
+  .toggle .first-tab,
+  .toggle .second-tab,
+  .toggle .third-tab {
+    font-size: 0.98rem;
+  }
+
+  .budget-dashboard #all,
+  .budget-dashboard #income,
+  .budget-dashboard #expense {
+    height: calc(100% - 105px);
+  }
+
+  .budget-dashboard #all ul,
+  .budget-dashboard #income ul,
+  .budget-dashboard #expense ul {
+    padding: 0 16px 12px;
+  }
+
+  .budget-dashboard #all ul {
+    height: calc(100% - 22px);
+    min-height: 240px;
+  }
+
+  .budget-dashboard #income ul,
+  .budget-dashboard #expense ul {
+    height: calc(100% - 100px);
+    min-height: 160px;
+  }
+
+  .budget-dashboard #expense .input,
+  .budget-dashboard #income .input {
+    width: calc(100% - 32px);
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .lang-btn {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+  }
+}
+
+/* ==================== TABLETS / IPAD ==================== */
+
+@media (min-width: 600px) and (max-width: 1023px) {
+  body {
+    align-items: stretch;
+    padding: 0;
+    background: #222;
+  }
+
+  .budget-container {
+    width: 100vw;
+    min-height: 100vh;
+    border-radius: 0;
+    background: linear-gradient(180deg, #2a0355 0%, #2a0355 40%, #ffffff 40%);
+  }
+
+  .budget-container .app-title {
+    margin: 34px 48px 0;
+  }
+
+  .budget-container .app-title a {
+    font-size: 1.25rem;
+  }
+
+  .language-switcher {
+    gap: 10px;
+  }
+
+  .lang-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: 12px;
+  }
+
+  .budget-header {
+    padding: 0 48px;
+  }
+
+  .budget-header .balance {
+    margin-top: 44px;
+  }
+
+  .budget-header .balance .title {
+    font-size: 1.15rem;
+  }
+
+  .budget-header .balance .value {
+    font-size: 3.4rem;
+  }
+
+  .budget-header .account {
+    width: 100%;
+    margin-top: 38px;
+    padding: 20px 28px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .budget-header .account .income,
+  .budget-header .account .outcome,
+  .chart {
+    width: 32%;
+    max-width: none;
+  }
+
+  .budget-header .account .income .title,
+  .budget-header .account .outcome .title {
+    font-size: 1.05rem;
+  }
+
+  .budget-header .account .income .income-total,
+  .budget-header .account .outcome .outcome-total {
+    font-size: 1.15rem;
+  }
+
+  .budget-dashboard {
+    min-height: calc(100vh - 330px);
+    margin-top: 46px;
+    padding-top: 42px;
+    border-radius: 44px 44px 0 0;
+    overflow: hidden;
+  }
+
+  .budget-dashboard .dash-title {
+    margin-left: 48px;
+    font-size: 2.15rem;
+  }
+
+  .toggle {
+    margin-left: 48px;
+    gap: 34px;
+  }
+
+  .toggle .first-tab,
+  .toggle .second-tab,
+  .toggle .third-tab {
+    font-size: 1.2rem;
+  }
+
+  .budget-dashboard #all,
+  .budget-dashboard #income,
+  .budget-dashboard #expense {
+    height: calc(100% - 125px);
+  }
+
+  .budget-dashboard #all ul,
+  .budget-dashboard #income ul,
+  .budget-dashboard #expense ul {
+    padding: 0 48px 18px;
+    margin-top: 28px;
+  }
+
+  .budget-dashboard #all ul {
+    height: calc(100% - 28px);
+    min-height: 320px;
+  }
+
+  .budget-dashboard #income ul,
+  .budget-dashboard #expense ul {
+    height: calc(100% - 125px);
+    min-height: 230px;
+  }
+
+  .budget-dashboard ul.list li {
+    min-height: 62px;
+    margin-bottom: 16px;
+    padding: 16px 60px 16px 22px;
+    border-radius: 20px;
+    font-size: 1.08rem;
+  }
+
+  .budget-dashboard ul.list li #edit,
+  .budget-dashboard ul.list li #delete {
+    width: 34px;
+    height: 34px;
+    background-size: 17px 17px;
+  }
+
+  .budget-dashboard ul.list li #edit {
+    right: 64px;
+  }
+
+  .budget-dashboard ul.list li #delete {
+    right: 18px;
+  }
+
+  .budget-dashboard #expense .input,
+  .budget-dashboard #income .input {
+    width: calc(100% - 96px);
+    margin: 12px 48px 0;
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .budget-dashboard #expense .input input#expense-title-input,
+  .budget-dashboard #income .input input#income-title-input,
+  .budget-dashboard #expense .input input#expense-amount-input,
+  .budget-dashboard #income .input input#income-amount-input {
+    height: 50px;
+    font-size: 1rem;
+    border-radius: 14px;
+  }
+
+  .add-expense,
+  .add-income {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+  }
+
+  .cookie-banner {
+    width: min(86vw, 680px);
+    padding: 18px 22px;
+  }
+}
+
+/* ==================== DESKTOP / PC - FULL SCREEN ==================== */
+
+@media (min-width: 1024px) {
+  body {
+    align-items: stretch;
+    padding: 0;
+    background: #2a0355;
+  }
+
+  .budget-container {
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #2a0355;
+    display: grid;
+    grid-template-columns: 42% 58%;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+  }
+
+  .budget-container .app-title {
+    grid-column: 1 / 3;
+    margin: 30px 38px 0;
+  }
+
+  .budget-container .app-title a {
+    font-size: 1.3rem;
+  }
+
+  .language-switcher {
+    gap: 10px;
+  }
+
+  .lang-btn {
+    padding: 8px 16px;
+    font-size: 0.88rem;
+    border-radius: 12px;
+  }
+
+  .budget-header {
+    grid-column: 1 / 2;
+    padding: 0 38px 38px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .budget-header .balance {
+    margin-top: 0;
+  }
+
+  .budget-header .balance .title {
+    font-size: 1.2rem;
+  }
+
+  .budget-header .balance .value {
+    font-size: clamp(3rem, 5vw, 4.4rem);
+  }
+
+  .budget-header .account {
+    margin-top: 46px;
+    padding: 26px 24px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .budget-header .account .income,
+  .budget-header .account .outcome,
+  .chart {
+    width: 32%;
+    max-width: none;
+  }
+
+  .budget-dashboard {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+    min-height: auto;
+    height: calc(100vh - 98px);
+    margin: 0 38px 38px 0;
+    border-radius: 34px;
+    padding: 38px 0 26px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+  }
+
+  .budget-dashboard .dash-title {
+    margin-left: 40px;
+    font-size: 2.15rem;
+  }
+
+  .toggle {
+    margin-left: 40px;
+    gap: 34px;
+  }
+
+  .toggle .first-tab,
+  .toggle .second-tab,
+  .toggle .third-tab {
+    font-size: 1.15rem;
+  }
+
+  .budget-dashboard #all,
+  .budget-dashboard #income,
+  .budget-dashboard #expense {
+    height: calc(100% - 115px);
+  }
+
+  .budget-dashboard #all ul,
+  .budget-dashboard #income ul,
+  .budget-dashboard #expense ul {
+    max-height: none;
+    padding: 0 40px 18px;
+    margin-top: 28px;
+  }
+
+  .budget-dashboard #all ul {
+    height: calc(100% - 28px);
+    min-height: 260px;
+  }
+
+  .budget-dashboard #income ul,
+  .budget-dashboard #expense ul {
+    height: calc(100% - 120px);
+    min-height: 220px;
+  }
+
+  .budget-dashboard ul.list li {
+    min-height: 62px;
+    margin-bottom: 16px;
+    padding: 16px 62px 16px 22px;
+    border-radius: 20px;
+    font-size: 1.05rem;
+  }
+
+  .budget-dashboard ul.list li #edit,
+  .budget-dashboard ul.list li #delete {
+    width: 34px;
+    height: 34px;
+    background-size: 17px 17px;
+  }
+
+  .budget-dashboard ul.list li #edit {
+    right: 64px;
+  }
+
+  .budget-dashboard ul.list li #delete {
+    right: 18px;
+  }
+
+  .budget-dashboard #expense .input,
+  .budget-dashboard #income .input {
+    width: calc(100% - 80px);
+    margin: 12px 40px 0;
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .budget-dashboard #expense .input input#expense-title-input,
+  .budget-dashboard #income .input input#income-title-input,
+  .budget-dashboard #expense .input input#expense-amount-input,
+  .budget-dashboard #income .input input#income-amount-input {
+    height: 50px;
+    font-size: 1rem;
+    border-radius: 14px;
+  }
+
+  .add-expense,
+  .add-income {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+  }
+
+  .cookie-banner {
+    width: min(90vw, 720px);
+  }
+}
+
+/* ==================== LARGE DESKTOP ==================== */
+
+@media (min-width: 1440px) {
+  .budget-container {
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    grid-template-columns: 40% 60%;
+  }
+
+  .budget-dashboard #all ul,
+  .budget-dashboard #income ul,
+  .budget-dashboard #expense ul {
+    max-height: none;
+  }
+}
+
+/* ==================== VERY SHORT SCREENS ==================== */
+
+@media (max-height: 680px) {
+  .budget-header .balance {
+    margin-top: 22px;
+  }
+
+  .budget-header .account {
+    margin-top: 22px;
+  }
+
+  .budget-dashboard {
+    margin-top: 28px;
+  }
+
+  .budget-dashboard #all ul {
+    min-height: 220px;
+  }
+
+  .budget-dashboard #income ul,
+  .budget-dashboard #expense ul {
+    min-height: 150px;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 760px) {
+  .budget-container {
+    height: 100vh;
+    min-height: 100vh;
+  }
+
+  .budget-dashboard {
+    height: calc(100vh - 88px);
+    margin-bottom: 28px;
+  }
+
+  .budget-dashboard #all,
+  .budget-dashboard #income,
+  .budget-dashboard #expense {
+    height: calc(100% - 105px);
+  }
+
+  .budget-dashboard #all ul {
+    height: calc(100% - 28px);
+    min-height: 230px;
+  }
+
+  .budget-dashboard #income ul,
+  .budget-dashboard #expense ul {
+    height: calc(100% - 110px);
+    min-height: 160px;
+  }
+
+  .budget-header .account {
+    margin-top: 30px;
+  }
+
+}
+
+/* ==================== CURRENCY SWITCHER ==================== */
+
+.currency-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.currency-btn {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: "Gilroy Bold", sans-serif;
+  font-size: 0.75rem;
+}
+
+.currency-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.currency-btn.active-currency {
+  background: #f0624d;
+  border-color: #f0624d;
+  box-shadow: 0 6px 14px rgba(240, 98, 77, 0.35);
+}
+
+@media (min-width: 600px) {
+  .currency-switcher {
+    gap: 10px;
+  }
+
+  .currency-btn {
+    padding: 8px 16px;
+    font-size: 0.88rem;
+    border-radius: 12px;
+  }
 }
