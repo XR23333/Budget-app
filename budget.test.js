@@ -12,19 +12,13 @@ global.updateChart = jest.fn();
 // Mock alert to prevent actual browser pop-ups during testing
 global.alert = jest.fn();
 
-// Import functions to be tested
-const {
-    calculateTotal,
-    calculateBalance,
-    getPositiveAmount,
-    show,
-    hide,
-    active,
-    inactive,
-    clearInput,
-    clearElement,
-    loadEntries,
-    saveEntries
+// 3. Import the functions to be tested (Now it includes the Core Bosses!)
+const { 
+    loadEntries, saveEntries, deleteOrEdit,
+    deleteEntry, editEntry, updateUI, showEntry,
+    calculateTotal, calculateBalance,
+    getPositiveAmount, clearElement, clearInput,
+    show, hide, active, inactive
 } = require('./budget.js');
 
 
@@ -103,7 +97,6 @@ describe('UI helper functions', () => {
         expect(div.classList.contains('hide')).toBe(false);
     });
 
-    // 【新增】测试 hide 函数能否正确处理包含多个元素的数组
     test('hide should add "hide" class to multiple elements in an array', () => {
         const div1 = document.createElement('div');
         const div2 = document.createElement('div');
@@ -120,7 +113,6 @@ describe('UI helper functions', () => {
         expect(div.classList.contains('focus')).toBe(true);
     });
 
-    // 【新增】测试 inactive 函数能否正确清除多个标签的焦点状态
     test('inactive should remove "focus" class from multiple tab elements', () => {
         const tab1 = document.createElement('div');
         const tab2 = document.createElement('div');
@@ -133,7 +125,6 @@ describe('UI helper functions', () => {
         expect(tab2.classList.contains('focus')).toBe(false);
     });
 
-    // 【新增】测试 clearInput 对多个输入框的清理
     test('clearInput should reset multiple input values', () => {
         const input1 = document.createElement('input');
         const input2 = document.createElement('input');
@@ -192,6 +183,58 @@ describe("additional coverage tests", () => {
         getPositiveAmount(input);
 
         expect(input.value).toBe("50");
+    });
+});
+
+// ===== Simulated User Interactions (Replaces direct function calls) =====
+describe('User Interactions (Simulated Clicks)', () => {
+    test('User click on add income button should process data and update UI', () => {
+        // 1. 获取输入框和添加按钮
+        const titleInput = document.getElementById("income-title-input");
+        const amountInput = document.getElementById("income-amount-input");
+        const addBtn = document.querySelector(".add-income");
+
+        // 2. 模拟用户输入
+        titleInput.value = "Bonus";
+        amountInput.value = "1000";
+        
+        // 3. 模拟用户点击按钮！(这会自动触发 budget.js 里的监听器代码)
+        addBtn.click(); 
+
+        // 4. 验证页面上是否成功渲染了这条收入
+        const incomeList = document.querySelector("#income .list");
+        expect(incomeList.innerHTML).toContain("Bonus");
+        expect(incomeList.innerHTML).toContain("1000");
+    });
+
+    test('User click on add expense button should process data and update UI', () => {
+        // 1. 获取输入框和添加按钮
+        const titleInput = document.getElementById("expense-title-input");
+        const amountInput = document.getElementById("expense-amount-input");
+        const addBtn = document.querySelector(".add-expense");
+
+        // 2. 模拟用户输入
+        titleInput.value = "Lunch";
+        amountInput.value = "50";
+        
+        // 3. 模拟用户点击按钮！
+        addBtn.click(); 
+
+        // 4. 验证页面上是否成功渲染了这条支出
+        const expenseList = document.querySelector("#expense .list");
+        expect(expenseList.innerHTML).toContain("Lunch");
+        expect(expenseList.innerHTML).toContain("50");
+    });
+    
+    test('Tab switching should work correctly', () => {
+        const incomeTabBtn = document.querySelector(".second-tab");
+        const incomePanel = document.querySelector("#income");
+        
+        // 点击顶部的收入 Tab 按钮
+        incomeTabBtn.click();
+        
+        // 验证收入面板是否取消了隐藏状态
+        expect(incomePanel.classList.contains("hide")).toBe(false);
     });
 });
 

@@ -329,16 +329,21 @@ function inactive(elements) {
 // =====================
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    loadEntries,
+    saveEntries,
+    deleteOrEdit,
+    deleteEntry,
+    editEntry,
+    updateUI,
+    showEntry,
     calculateTotal,
     calculateBalance,
     getPositiveAmount,
+    clearElement,
+    clearInput,
     show,
     hide,
     active,
-    inactive,
-    clearInput,
-    clearElement,
-    loadEntries,
-    saveEntries
+    inactive
   };
 }

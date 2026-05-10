@@ -1,0 +1,38 @@
+name: Jest Test & Codecov
+
+# Trigger on push or pull request to master or main branches
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout your code repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # 3. Install project dependencies (Jest, etc.)
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Run tests with coverage
+      # (Note: Based on your package.json, you must use 'npm run coverage' to generate the report)
+      - name: Run test with coverage
+        run: npm run coverage
+
+      # 5. Upload the generated coverage report to Codecov
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # Uses the Token stored in GitHub Secrets
