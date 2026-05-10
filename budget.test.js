@@ -198,7 +198,7 @@ describe("additional coverage tests", () => {
 // ===== Simulated User Interactions (Replaces direct function calls) =====
 describe('User Interactions (Simulated Clicks)', () => {
     
-    // 【NEW】 Test early return when title is empty (Branch coverage)
+    // Test early return when title is empty (Branch coverage)
     test('Should return early if income title is empty', () => {
         const titleInput = document.getElementById("income-title-input");
         const addBtn = document.querySelector(".add-income");
@@ -208,6 +208,20 @@ describe('User Interactions (Simulated Clicks)', () => {
         addBtn.click(); 
 
         // List should remain unchanged
+        expect(document.querySelector("#income .list").innerHTML).toBe(initialHTML);
+    });
+
+    // Test early return when amount is invalid (Branch coverage)
+    test('Should return early if income amount is invalid', () => {
+        const titleInput = document.getElementById("income-title-input");
+        const amountInput = document.getElementById("income-amount-input");
+        const addBtn = document.querySelector(".add-income");
+        
+        titleInput.value = "Bonus"; 
+        amountInput.value = "-100"; // Negative
+        const initialHTML = document.querySelector("#income .list").innerHTML;
+        addBtn.click(); 
+
         expect(document.querySelector("#income .list").innerHTML).toBe(initialHTML);
     });
 
@@ -230,12 +244,26 @@ describe('User Interactions (Simulated Clicks)', () => {
         expect(incomeList.innerHTML).toContain("1000");
     });
 
-    // 【NEW】 Test early return when expense title is empty
+    // Test early return when expense title is empty
     test('Should return early if expense title is empty', () => {
         const titleInput = document.getElementById("expense-title-input");
         const addBtn = document.querySelector(".add-expense");
         
         titleInput.value = ""; // Empty title
+        const initialHTML = document.querySelector("#expense .list").innerHTML;
+        addBtn.click(); 
+
+        expect(document.querySelector("#expense .list").innerHTML).toBe(initialHTML);
+    });
+
+    // Test early return when amount is invalid
+    test('Should return early if expense amount is invalid', () => {
+        const titleInput = document.getElementById("expense-title-input");
+        const amountInput = document.getElementById("expense-amount-input");
+        const addBtn = document.querySelector(".add-expense");
+        
+        titleInput.value = "Lunch"; 
+        amountInput.value = "0"; // Zero
         const initialHTML = document.querySelector("#expense .list").innerHTML;
         addBtn.click(); 
 
@@ -292,32 +320,56 @@ describe('Data Modification (Edit & Delete)', () => {
         document.getElementById("income-amount-input").value = "2000";
         document.querySelector(".add-income").click();
         
-        // Since it is newly added, its id (index) is likely 1 (because "Bonus" was added in a previous test)
-        // Let's use deleteOrEdit to accurately test the proxy logic
-        const mockEditEvent = { target: { id: "edit", parentNode: { id: 0 } } }; // ID 0 is "Bonus"
+        // Dynamically get the ID from the newly generated DOM element instead of hardcoding
+        const incomeList = document.querySelector("#income .list");
+        const entryId = incomeList.firstChild.id;
+        
+        const mockEditEvent = { target: { id: "edit", parentNode: { id: entryId } } };
         
         deleteOrEdit(mockEditEvent);
 
-        expect(document.getElementById("income-title-input").value).toBe("Bonus");
-        expect(document.getElementById("income-amount-input").value).toBe("1000");
+        expect(document.getElementById("income-title-input").value).toBe("Salary Test");
+        expect(document.getElementById("income-amount-input").value).toBe("2000");
     });
 
     test('editEntry should populate expense inputs properly', () => {
-        // ID 1 should be "Lunch" based on the previous interactions
-        const mockEditEvent = { target: { id: "edit", parentNode: { id: 1 } } };
+        // Trigger an add expense first to ensure we have a clean target to test
+        document.getElementById("expense-title-input").value = "Dinner";
+        document.getElementById("expense-amount-input").value = "25";
+        document.querySelector(".add-expense").click();
+
+        // Dynamically get the ID from the expense list
+        const expenseList = document.querySelector("#expense .list");
+        const entryId = expenseList.firstChild.id;
+        
+        const mockEditEvent = { target: { id: "edit", parentNode: { id: entryId } } };
         
         deleteOrEdit(mockEditEvent);
 
-        expect(document.getElementById("expense-title-input").value).toBe("Lunch");
-        expect(document.getElementById("expense-amount-input").value).toBe("50");
+        expect(document.getElementById("expense-title-input").value).toBe("Dinner");
+        expect(document.getElementById("expense-amount-input").value).toBe("25");
     });
 
     test('deleteOrEdit should route to deleteEntry when delete button is clicked', () => {
-        const mockDeleteEvent = { target: { id: "delete", parentNode: { id: 0 } } };
+        // Create a dummy expense to safely delete
+        document.getElementById("expense-title-input").value = "Trash";
+        document.getElementById("expense-amount-input").value = "5";
+        document.querySelector(".add-expense").click();
+
+        const expenseList = document.querySelector("#expense .list");
+        const entryId = expenseList.firstChild.id;
+
+        const mockDeleteEvent = { target: { id: "delete", parentNode: { id: entryId } } };
         // Executing delete should successfully run without throwing errors
         expect(() => {
             deleteOrEdit(mockDeleteEvent);
         }).not.toThrow();
+    });
+
+    test('deleteOrEdit should do nothing if clicked element is not edit or delete', () => {
+        const mockEvent = { target: { id: "random", parentNode: { id: 0 } } };
+        // Should not throw errors and quietly return
+        expect(() => deleteOrEdit(mockEvent)).not.toThrow();
     });
 });
 
@@ -358,7 +410,6 @@ describe('localStorage error handling', () => {
         expect(localStorage.getItem('entry_list')).toBeNull();
     });
 
-    // 【NEW】 Test saveEntries try/catch block
     test('saveEntries should catch error and alert on save failure', () => {
         // Intentionally break localStorage.setItem to force an error
         jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
